@@ -6,8 +6,14 @@
 (in-package :ilex)
 
 
+(defparameter *buffer-list* nil)
 (defstruct buffer
   lines cursor-x cursor-y file-name)
+
+(defparameter buf 
+  (ilex::make-buffer 
+   :lines '("haha" "foo" "lol")
+   :file-name #p"./foo.test" ))
 
 (defun save-buffer (buffer)
   "destructivly save buffer to file-name"
@@ -19,6 +25,55 @@
        :do
        (write-line line file ))))
 
+(defun create-buffer (name buffer-list)
+  "initialize a new buffer, name it, and push it into buffer-list
+returns buffer-list "
+  (pushnew  
+   (make-buffer 
+    :cursor-x 0 
+    :cursor-y 0 
+    :file-name name)
+   buffer-list)
+  buffer-list) 
+
+
+(defun render-buffer (buffer)
+  (charms:refresh-window charms:*standard-window*)
+  (loop for line in (buffer-lines buffer)
+     with i = 0 do
+       (charms:write-string-at-point *standard-window* line 0 i )
+       (incf i)))
+
+(create-buffer "my-buf" *buffer-list*)
+
+
+(defun input-loop ()
+  (loop
+     with buf = (car (create-buffer "my buf" *buffer-list*))
+     for c = (charms:get-char *standard-window* :ignore-error t)
+     do
+       (charms:move-cursor *standard-window*
+                           (buffer-cursor-x buf)
+                           (buffer-cursor-x buf))
+       (render-buffer buf)
+       (handle-input c buf)))
+
+
+(defun handle-input (c buf)
+  (case c
+    ((nil) nil)
+    ((#\k) (decf (buffer-cursor-y buf)))
+    ((#\h) (decf (buffer-cursor-x buf)))
+    ((#\j) (incf (buffer-cursor-y buf)))
+    ((#\l) (incf (buffer-cursor-x buf)))
+    ((#\s ) (save-buffer buf))
+    ((#\q #\Q) (sb-ext:exit))
+    (t (charms:write-char-at-point 
+        *standard-window* 
+        c 
+        (buffer-cursor-x buf) 
+        (buffer-cursor-y buf)))))
+
 (defun main (args)
   (declare (ignore args ))
   "Start the timer program."
@@ -26,33 +81,8 @@
     (charms:disable-echoing)
     (charms:enable-raw-input :interpret-control-characters t)
     (charms:enable-non-blocking-mode charms:*standard-window*)
+    (input-loop)
 
-    (loop :named driver-loop
-       :with x := 0                  ; Cursor X coordinate
-       :with y := 0                  ; Cursor Y coordinate
-       :for c := (charms:get-char charms:*standard-window*
-                                  :ignore-error t)
-       :do (progn
-             ;; Refresh the window
-             (charms:refresh-window charms:*standard-window*)
-
-             ;; Process input
-             (case c
-               ((nil) nil)
-               ((#\w) (decf y))
-               ((#\a) (decf x))
-               ((#\s) (incf y))
-               ((#\d) (incf x))
-               ((#\Space) (charms:write-char-at-point *standard-window* c (random 10) (random 10) ))
-               ((#\q #\Q) (return-from driver-loop)))
-
-             ;; Normalize the cursor coordinates
-             (multiple-value-bind (width height)
-                 (charms:window-dimensions charms:*standard-window*)
-               (setf x (mod x width)
-                     y (mod y height)))
-
-             ;; Move the cursor to the new location
-             (charms:move-cursor charms:*standard-window* x y)))))
+    ))
 
 
