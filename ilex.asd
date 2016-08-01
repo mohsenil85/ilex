@@ -9,7 +9,7 @@
 
 (defsystem ilex
   :version "0.1"
-  :author ""
+  :author "mohsenil85@gmail.com"
   :license ""
   :depends-on (:cl-charms)
   :components ((:module "src"
