@@ -10,6 +10,8 @@
 (in-package :ilex)
 (declaim (optimize (debug 3)))
 
+;;; here we'd like to make an <editor> object, and have globals like buffer-list
+;;; be a part of it
 (defparameter *buffer-list* nil "A list of all available buffers")
 
 (defclass <buffer> ()
@@ -25,10 +27,12 @@
    (cursor-x
     :type number
     :initarg :cursor-x
+    :initform 0
     :accessor cursor-x)
    (cursor-y
     :type number
     :initarg :cursor-y
+    :initform 0
     :accessor cursor-y)))
 
 (defmethod save-buffer ((buffer <buffer>))
@@ -43,27 +47,16 @@
 
 (defun create-buffer (path)
   "given a path, return a buffer with the contents at that path,
- and push the buffer into the global buffer list"
+or initalize a buffer at that path, then push the buffer into the global buffer list"
   (with-safe-io-syntax ()
-    (let* ((contents (uiop/stream:read-file-lines path))
+    (let* ((existing (uiop/filesystem:probe-file* path :truename t))
+           (contents (if existing (uiop/stream:read-file-lines path) 'nil))
            (buffer (make-instance '<buffer>
                                   :path path
                                   :contents contents)))
       (push buffer *buffer-list*)
       buffer))) 
 
-(defun initialize-buffer (path)
-  "initalize an empty buffer at path"
-  (with-safe-io-syntax ()
-    (let ((buffer (make-instance '<buffer> :path path)))
-      (push buffer *buffer-list*)
-      buffer))) 
-
-(let ((existing (uiop/filesystem:probe-file* path :truename t)))
-  (if existing 
-      (create-buffer existing)
-      (initialize-buffer existing)
- ))
 
 (defmethod render-buffer ((buffer <buffer>))
   (charms:refresh-window (charms:standard-window))
