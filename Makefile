@@ -11,4 +11,4 @@ manifest:
 	--eval '(quit)'
 
 clean:
-	rm *.fasl out manifest
+	rm *.fasl ilex manifest
