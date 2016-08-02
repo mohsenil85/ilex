@@ -12,6 +12,7 @@
   :author "mohsenil85@gmail.com"
   :license ""
   :depends-on (:cl-charms
+               :cl-strings
                :trivial-types
                :swank)
   :components ((:module "src"
