@@ -11,7 +11,9 @@
   :version "0.1"
   :author "mohsenil85@gmail.com"
   :license ""
-  :depends-on (:cl-charms)
+  :depends-on (:cl-charms
+               :trivial-types
+               :swank)
   :components ((:module "src"
                 :components
                 ((:file "ilex"))))
