@@ -1,11 +1,14 @@
 (in-package :cl-user)
 (defpackage ilex
   (:use :cl
-        :charms
+        :cl-charms
         :trivial-types
-        :uiop/stream
-        :uiop/filesystem
         :swank)
+  (:import-from :uiop/utility :strcat)
+  (:import-from :uiop/filesystem :probe-file*)
+  (:import-from :uiop/stream 
+                :read-file-lines
+                :with-safe-io-syntax)
   (:export #:main))
 (in-package :ilex)
 (declaim (optimize (debug 3)))
@@ -26,12 +29,12 @@
     :reader get-path)
    (cursor-x
     :type number
-    :initarg :cursor-x
+    :initarg :x
     :initform 0
     :accessor cursor-x)
    (cursor-y
     :type number
-    :initarg :cursor-y
+    :initarg :y
     :initform 0
     :accessor cursor-y)))
 
@@ -65,6 +68,39 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
        with i = 0 do
          (charms:write-string-at-point (charms:standard-window) line 0 i )
          (incf i))))
+
+(defun insert-after-string (string index elt)
+  "insert elt into string after index"
+  (let ((head (subseq string 0 index))
+        (rest (subseq string (1+ index) (length string))))
+    (uiop/utility:strcat head elt rest)))
+
+(defun insert-after-list (lst index newelt)
+  "insert newelt into list after index"
+  (push newelt (cdr (nthcdr index lst))) 
+  lst)
+
+
+(defmethod replace-line ((buffer <buffer>) idx string)
+  (setf (nth idx (contents buffer)) string))
+
+(defparameter buf (make-instance '<buffer> 
+                                 :y 1
+                                 :x 0
+                                 :contents '("1" "abcdefg" "3")))
+(insert-char "x" buf)
+
+
+(defmethod insert-char (char (buffer <buffer>))
+  "persist a char entry to a buffer (as opposed to writing that buffer to a file).
+returns the buffer"
+  (let* ((y (cursor-y buffer))
+         (contents (contents buffer))
+         (line-data (nth y contents))
+         (new-data (insert-after-string line-data (cursor-x buffer) char)))
+   (replace-line buffer y new-data) 
+    buffer))
+
 
 
 (defun render-char-at-cursor (c buf)
