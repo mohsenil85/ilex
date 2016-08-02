@@ -3,6 +3,7 @@
   (:use :cl
         :cl-charms
         :trivial-types
+        :cl-strings
         :swank)
   (:import-from :uiop/utility :strcat)
   (:import-from :uiop/filesystem :probe-file*)
@@ -62,6 +63,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
 
 
 (defmethod render-buffer ((buffer <buffer>))
+  "write the contents of buffer line by line onto the standard window"
   (charms:refresh-window (charms:standard-window))
   (when (contents buffer)
     (loop for line in (contents buffer)
@@ -70,12 +72,15 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
          (incf i))))
 
 (defun insert-after-string (string index elt)
+  ;;util
   "insert elt into string after index"
-  (let ((head (subseq string 0 index))
-        (rest (subseq string (1+ index) (length string))))
-    (uiop/utility:strcat head elt rest)))
+  (or string
+    (setf string ""))
+  (cl-strings:insert elt string :position index))
+
 
 (defun insert-after-list (lst index newelt)
+  ;;util
   "insert newelt into list after index"
   (push newelt (cdr (nthcdr index lst))) 
   lst)
@@ -84,16 +89,9 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
 (defmethod replace-line ((buffer <buffer>) idx string)
   (setf (nth idx (contents buffer)) string))
 
-(defparameter buf (make-instance '<buffer> 
-                                 :y 1
-                                 :x 0
-                                 :contents '("1" "abcdefg" "3")))
-(insert-char "x" buf)
-
 
 (defmethod insert-char (char (buffer <buffer>))
-  "persist a char entry to a buffer (as opposed to writing that buffer to a file).
-returns the buffer"
+  "persist a char entry to a buffer returns the buffer"
   (let* ((y (cursor-y buffer))
          (contents (contents buffer))
          (line-data (nth y contents))
@@ -102,14 +100,17 @@ returns the buffer"
     buffer))
 
 
-
 (defun render-char-at-cursor (c buf)
   "render the char in ncurses"
-  (charms:write-char-at-point 
+  (charms:write-string-at-point 
    (charms:standard-window) 
    c 
    (cursor-x buf) 
    (cursor-y buf)))
+
+(defun self-insert-command (c buf)
+  (insert-char c buf)
+  (render-char-at-cursor c buf))
 
 
 (defun handle-input (c buf)
@@ -121,7 +122,7 @@ returns the buffer"
     ((#\l) (incf (cursor-x buf)))
     ((#\s ) (save-buffer buf))
     ((#\q #\Q) (sb-ext:exit))
-    (t (render-char-at-cursor c buf) )))
+    (t (self-insert-command (string c) buf) )))
 
 
 (defun input-loop ()
@@ -139,6 +140,8 @@ returns the buffer"
   "top level entry"
   (when (second args)
     (create-buffer (second args)))
+  (swank-listen)
+
   (charms:with-curses ()
     (charms:disable-echoing)
     (charms:enable-raw-input :interpret-control-characters t)

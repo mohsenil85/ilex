@@ -7,12 +7,12 @@
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :ilex)' in your Lisp.
 
-(plan 4)
+(plan 5)
 
 (defparameter buf 
-  (ilex::make-buffer 
-   :lines '("haha" "foo" "lol")
-   :file-name #p"./foo.test" ))
+  (make-instance 'ilex::<buffer> 
+   :contents '("haha" "foo" "lol")
+   :path #p"./foo.test" ))
 
 (ilex::save-buffer buf)
 
@@ -22,10 +22,12 @@
 
 
 
-(let* ((buffer-list (ilex::create-buffer "new-buf" *test-buffers-list*))
-       (buf (car buffer-list )))
-  (isnt nil buffer-list)
-  (is (ilex::buffer-file-name buf) "new-buf")
-  (is (ilex::buffer-cursor-x buf) 0))
+(let ((buf (ilex::create-buffer "new-buf")))
+  (is (ilex::get-path buf) "new-buf")
+  (is (ilex::cursor-x buf) 0))
+
+(is (ilex::insert-after-string "abc" 1 "x") "axbc")
+(is (ilex::insert-after-list '('a 'b 'c) 0 'x ) '('a x 'b 'c))
+
 
 (finalize)
