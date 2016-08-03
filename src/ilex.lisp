@@ -16,6 +16,7 @@
 
 ;;; here we'd like to make an <editor> object, and have globals like buffer-list
 ;;; be a part of it
+;;;; would also be cool to have *editor* close over some state
 (defparameter *buffer-list* nil "A list of all available buffers")
 
 (defclass <buffer> ()
@@ -38,6 +39,15 @@
     :initarg :y
     :initform 0
     :accessor cursor-y)))
+
+(defmethod nth-line ((buffer <buffer>) n)
+  (nth n (contents buffer)))
+
+(defmethod current-line (<buffer>)
+  (nth (cursor-y <buffer>) (contents <buffer>)))
+
+(defmethod number-of-lines  (<buffer>)
+  (length (contents <buffer>)))
 
 (defmethod save-buffer ((buffer <buffer>))
   "write buffer to the filename specifed in PATH"
@@ -108,18 +118,30 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
    (cursor-x buf) 
    (cursor-y buf)))
 
+(defun move-cursor-buffer (buffer &key direction)
+  (ecase direction
+    (:up    (unless (= 0 (cursor-y buffer)) 
+              (decf (cursor-y buffer))))
+    (:down  (unless (> 0 (number-of-lines buffer)) 
+              (incf (cursor-y buffer))))
+    (:left  (unless (= 0 (cursor-x buffer)) 
+              (decf (cursor-x buffer))))
+    (:right (unless (< (length (current-line buffer)) (cursor-x buffer)) 
+              (incf (cursor-x buffer))))))
+
 (defun self-insert-command (c buf)
   (insert-char c buf)
-  (render-char-at-cursor c buf))
-
+  (render-char-at-cursor c buf)
+  (move-cursor-buffer buf :direction :right)
+  (charms:refresh-window (charms:standard-window)))
 
 (defun handle-input (c buf)
   (case c
     ((nil) nil)
-    ((#\k) (decf (cursor-y buf)))
-    ((#\h) (decf (cursor-x buf)))
-    ((#\j) (incf (cursor-y buf)))
-    ((#\l) (incf (cursor-x buf)))
+    ((#\k) (move-cursor-buffer buf :direction :up) )
+    ((#\j) (move-cursor-buffer buf :direction :down))
+    ((#\h) (move-cursor-buffer buf :direction :left))
+    ((#\l) (move-cursor-buffer buf :direction :right))
     ((#\s ) (save-buffer buf))
     ((#\q #\Q) (sb-ext:exit))
     (t (self-insert-command (string c) buf) )))
@@ -130,10 +152,10 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
      with buf = (create-buffer "my buf")
      for c = (charms:get-char (charms:standard-window) :ignore-error t)
      do
-       (charms:move-cursor (charms:standard-window)
-                           (cursor-x buf)
-                           (cursor-x buf))
        (render-buffer buf)
+       (charms:move-cursor  (charms:standard-window)
+                            (cursor-x buf)
+                            (cursor-y buf))
        (handle-input c buf)))
 
 (defun main (args)
@@ -146,9 +168,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
     (charms:disable-echoing)
     (charms:enable-raw-input :interpret-control-characters t)
     (charms:enable-non-blocking-mode (charms:standard-window))
-    (input-loop)
-
-    ))
+    (input-loop)))
 
 
 (defun swank-init ()
@@ -169,7 +189,6 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
           swank::*new-connection-hook*)
     (swank-init)
     (setf listening t)))
-
 
 (defun swank-kill ()
   (when listening
