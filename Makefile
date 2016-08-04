@@ -4,11 +4,11 @@ all: manifest
 		--load-system ilex \
 		--output ilex \
 		--entry ilex:main \
-		--compress-core \
+		#--compress-core \ #
 
 manifest:
 	sbcl --eval '(ql:write-asdf-manifest-file "manifest" )' \
 	--eval '(quit)'
 
 clean:
-	rm *.fasl ilex manifest
+	git clean -fd

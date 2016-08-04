@@ -6,8 +6,9 @@
 (in-package :ilex-test)
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :ilex)' in your Lisp.
+(setf prove:*default-reporter* :tap)
 
-(plan 5)
+(plan 6)
 
 (defparameter buf 
   (make-instance 'ilex::<buffer> 
@@ -22,8 +23,9 @@
 
 
 
-(let ((buf (ilex::create-buffer "new-buf")))
-  (is (ilex::get-path buf) "new-buf")
+(let ((buf (ilex::create-buffer "new-buf" :path "")))
+  (is (ilex::get-path buf) "")
+  (is (ilex::name buf) "new-buf")
   (is (ilex::cursor-x buf) 0))
 
 (is (ilex::insert-after-string "abc" 1 "x") "axbc")
