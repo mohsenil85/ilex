@@ -30,29 +30,21 @@
 (defparameter *buffer-list* nil "A list of all available buffers")
 (defparameter *current-buffer* nil "The buffer currently focused")
 
-(defun get-current-buffer ()
-  (print *current-buffer*)
-  (or 
-   *current-buffer*
-   (let
-       ((buffer (create-buffer "SCRATCH")))
-     (setf *current-buffer* buffer)
-     buffer)))
-
 (defclass <buffer> ()
   ((contents 
     :documentation "a list of strings, one for each line of a file"
     :type (proper-list string)
     :initarg :contents
     :accessor contents) 
+   (path
+    :documentation "path is nullable. hmmmm"
+    ;:type pathname-designator
+    :initarg :path
+    :reader get-path)
    (name
     :type string
     :initarg :name
     :accessor name)
-   (path
-    :type pathname-designator
-    :initarg :path
-    :reader get-path)
    (cursor-x
     :type number
     :initarg :x
@@ -64,13 +56,37 @@
     :initform 0
     :accessor cursor-y)))
 
+(defmethod get-path :before ((buffer <buffer>))
+  
+  (uiop:ensure-pathname      )
+
+)
+
 (defun create-buffer (name &key path (x 0) (y 0) (contents '("")) )
-  (make-instance '<buffer>
-                 :contents contents
-                 :x x
-                 :y y
-                 :name name
-                 :path (uiop:native-namestring path)))
+  ;; (unless 
+  ;;     (eq 'pathname (type-of path)) 
+  ;;   (error 'not-a-path-error "~A is not a path~%" path ))
+  (let 
+      ((buffer 
+        (make-instance '<buffer>
+                       :contents contents
+                       :x x
+                       :y y
+                       :name name
+                       :path path)))
+    (push buffer *buffer-list*)
+    (setf *current-buffer* buffer)
+    buffer))
+
+
+(defun get-current-buffer ()
+  (or 
+   *current-buffer*
+   (let
+       ((buffer (create-buffer "SCRATCH")))
+     (setf *current-buffer* buffer)
+     buffer)))
+
 
 (defmethod nth-line ((buffer <buffer>) n)
   (nth n (contents buffer)))
@@ -88,11 +104,13 @@
   ((text :initarg :text :reader text)))
 (define-condition no-path-error (error)
   ((text :initarg :text :reader text)))
+(define-condition not-a-path-error (error)
+  ((text :initarg :text :reader text)))
 
-(defmethod save-buffer ((buffer <buffer>))
+(defun save-buffer (buffer)
   "write buffer to the filename specifed in PATH.
   errors when buffer does not have a path"
-  (if (slot-boundp buffer 'path) 
+  (if (get-path buffer) 
       (with-safe-io-syntax () 
         (with-open-file  (file (get-path buffer)
                                :direction :output
@@ -104,21 +122,15 @@
       ;;file lock
       (error 'no-path-error "no path set")))
 
-(defun open-buffer (path)
+(defun open-file (path)
   "given a path, return a buffer with the contents at that path,
 or initalize a buffer at that path, then push the buffer into the global buffer list"
   (with-safe-io-syntax ()
-    (let* ((existing 
-            (uiop:probe-file* path :truename t))
-           (buffer
-            (if existing
-                (create-buffer path 
-                               :path existing 
-                               :contents (uiop/stream:read-file-lines existing))
-                (create-buffer path :path "" ))))
-      (push buffer *buffer-list*)
-      (setf *current-buffer* buffer)
-      buffer))) 
+    (when (uiop:probe-file* path)
+      (create-buffer (uiop/common-lisp:namestring path) 
+                     :path (uiop:truenamize path) 
+                     :contents (uiop/stream:read-file-lines path))
+      ))) 
 
 (defmethod render-buffer ((buffer <buffer>))
   "write the contents of buffer line by line onto the standard window"
@@ -191,7 +203,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
     ((#\j) (move-cursor-buffer buf :direction :down))
     ((#\h) (move-cursor-buffer buf :direction :left))
     ((#\l) (move-cursor-buffer buf :direction :right))
-    ((#\o) (open-buffer "~/foo.test"))
+    ((#\o) (open-file "~/foo.test"))
     ((#\r) (charms:refresh-window (charms:standard-window)))
     ((#\s) (save-buffer buf))
     ((#\q) (uiop:quit))
@@ -208,7 +220,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
 
 (defun handle-args (args)
   (when (second args)
-    (open-buffer (second args))))
+    (open-file (second args))))
 
 (defun main (args)
   "top level entry"
