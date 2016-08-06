@@ -38,7 +38,7 @@
     :accessor contents) 
    (path
     :documentation "path is nullable. hmmmm"
-    ;:type pathname-designator
+    :type pathname-designator
     :initarg :path
     :reader get-path)
    (name
@@ -56,16 +56,19 @@
     :initform 0
     :accessor cursor-y)))
 
-(defmethod get-path :before ((buffer <buffer>))
-  
-  (uiop:ensure-pathname      )
-
-)
+(defun timestamp-filesting (&key (ilex-home #p"~/.ilex"))
+  (multiple-value-bind
+        (hr min sec dow mo dom yr tz)
+      (get-decoded-time)
+    (format nil "~a/~a~a~a~a~a~a~a~a.ilex" 
+            (uiop:truenamize ilex-home) hr min sec dow mo dom yr tz )))
 
 (defun create-buffer (name &key path (x 0) (y 0) (contents '("")) )
-  ;; (unless 
-  ;;     (eq 'pathname (type-of path)) 
-  ;;   (error 'not-a-path-error "~A is not a path~%" path ))
+  (unless path 
+    (setf path (uiop:ensure-pathname (timestamp-filesting))))
+  (unless 
+      (eq 'pathname (type-of path)) 
+    (error 'not-a-path-error "~A is not a path~%" path ))
   (let 
       ((buffer 
         (make-instance '<buffer>
@@ -83,7 +86,7 @@
   (or 
    *current-buffer*
    (let
-       ((buffer (create-buffer "SCRATCH")))
+       ((buffer (create-buffer "SCRATCH" :path #p"~/.ilex")))
      (setf *current-buffer* buffer)
      buffer)))
 
@@ -129,8 +132,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
     (when (uiop:probe-file* path)
       (create-buffer (uiop/common-lisp:namestring path) 
                      :path (uiop:truenamize path) 
-                     :contents (uiop/stream:read-file-lines path))
-      ))) 
+                     :contents (uiop/stream:read-file-lines path))))) 
 
 (defmethod render-buffer ((buffer <buffer>))
   "write the contents of buffer line by line onto the standard window"
@@ -229,7 +231,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
     (charms:enable-raw-input :interpret-control-characters t)
     (charms:enable-non-blocking-mode (charms:standard-window))
     (handle-args args)
-    (swank-listen)
+    ;; (swank-listen)
     (input-loop)))
 
 (defun swank-init ()
@@ -241,7 +243,7 @@ or initalize a buffer at that path, then push the buffer into the global buffer 
 
 (defun on-client-connect (conn)
   (declare (ignore conn))
-  (handler-case (charms:clear-window (charms:standard-window) :force-repaint t))
+  (charms:clear-window (charms:standard-window) :force-repaint t)
   (setf connected t))
 
 (defun swank-listen ()

@@ -6,20 +6,20 @@
 (in-package :ilex-test)
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :ilex)' in your Lisp.
-(setf prove:*default-reporter* :tap)
+;;(setf prove:*default-reporter* :tap)
 
 (plan 6)
 
-(defparameter buf 
-  (make-instance 'ilex::<buffer> 
-   :contents '("haha" "foo" "lol")
-   :path #p"./foo.test" ))
+;; (defparameter buf 
+;;   (make-instance 'ilex::<buffer> 
+;;    :contents '("haha" "foo" "lol")
+;;    :path #p"./foo.test" ))
 
-(ilex::save-buffer buf)
+;; (ilex::save-buffer buf)
 
-(with-open-file (f #p"./foo.test" 
-                   :direction :input)
-  (is (read-line f) "haha"))
+;; (with-open-file (f #p"./foo.test" 
+;;                    :direction :input)
+;;   (is (read-line f) "haha"))
 
 
 
