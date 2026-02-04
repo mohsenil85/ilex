@@ -2,7 +2,7 @@
 (
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
-SynthDef(\imbolc_eq12, { |in=1024, out=1026, lag=0.02,
+SynthDef(\ilex_eq12, { |in=1024, out=1026, lag=0.02,
     b0_freq=40,    b0_gain=0, b0_q=0.7, b0_on=1,
     b1_freq=80,    b1_gain=0, b1_q=1.0, b1_on=1,
     b2_freq=160,   b2_gain=0, b2_q=1.0, b2_on=1,

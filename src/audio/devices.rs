@@ -162,14 +162,14 @@ fn config_path() -> PathBuf {
     if let Some(home) = std::env::var_os("HOME") {
         PathBuf::from(home)
             .join(".config")
-            .join("imbolc")
+            .join("ilex")
             .join("audio_devices.json")
     } else {
         PathBuf::from("audio_devices.json")
     }
 }
 
-/// Load device config from ~/.config/imbolc/audio_devices.json
+/// Load device config from ~/.config/ilex/audio_devices.json
 pub fn load_device_config() -> AudioDeviceConfig {
     let path = config_path();
     let content = match std::fs::read_to_string(&path) {
@@ -192,7 +192,7 @@ pub fn load_device_config() -> AudioDeviceConfig {
     }
 }
 
-/// Save device config to ~/.config/imbolc/audio_devices.json
+/// Save device config to ~/.config/ilex/audio_devices.json
 pub fn save_device_config(config: &AudioDeviceConfig) {
     let path = config_path();
     if let Some(parent) = path.parent() {

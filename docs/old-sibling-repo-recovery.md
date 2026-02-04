@@ -19,7 +19,7 @@ These commits existed in the old repo but are not in this one. They were additio
 | `fb2e44d` | Extract grid/zoom utilities |
 | `37ce465` | Extract parameter adjustment algorithms |
 
-These moved instrument navigation, grid/zoom calculations, and param adjustment algorithms from the TUI binary into imbolc-core.
+These moved instrument navigation, grid/zoom calculations, and param adjustment algorithms from the TUI binary into ilex.
 
 ## How to Cherry-Pick
 
@@ -44,6 +44,6 @@ These moved instrument navigation, grid/zoom calculations, and param adjustment 
 
 4. Apply to this repo:
    ```bash
-   cd /path/to/imbolc-core
+   cd /path/to/ilex
    git am /tmp/patches/*.patch
    ```

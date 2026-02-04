@@ -2,7 +2,7 @@
 (
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
-SynthDef(\imbolc_lpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
+SynthDef(\ilex_lpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -13,7 +13,7 @@ SynthDef(\imbolc_lpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1),
     Out.ar(out, RLPF.ar(sig, finalCutoff, q) * fadein);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_hpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
+SynthDef(\ilex_hpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -24,7 +24,7 @@ SynthDef(\imbolc_hpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1),
     Out.ar(out, RHPF.ar(sig, finalCutoff, q) * fadein);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_bpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
+SynthDef(\ilex_bpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -36,7 +36,7 @@ SynthDef(\imbolc_bpf, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1),
 }).writeDefFile(dir);
 
 // Notch (Band-Reject)
-SynthDef(\imbolc_notch, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
+SynthDef(\ilex_notch, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -47,7 +47,7 @@ SynthDef(\imbolc_notch, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1
 }).writeDefFile(dir);
 
 // Comb — cutoff maps to comb frequency, resonance to decay
-SynthDef(\imbolc_comb, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=440, resonance=0.5, lag=0.02|
+SynthDef(\ilex_comb, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=440, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -60,7 +60,7 @@ SynthDef(\imbolc_comb, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1)
 }).writeDefFile(dir);
 
 // Allpass — same param mapping as Comb
-SynthDef(\imbolc_allpass, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=440, resonance=0.5, lag=0.02|
+SynthDef(\ilex_allpass, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=440, resonance=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -73,7 +73,7 @@ SynthDef(\imbolc_allpass, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(
 }).writeDefFile(dir);
 
 // Vowel — morphs A/E/I/O/U formants via shape param
-SynthDef(\imbolc_vowel, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, shape=0, lag=0.02|
+SynthDef(\ilex_vowel, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, shape=0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);
@@ -87,7 +87,7 @@ SynthDef(\imbolc_vowel, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1
 }).writeDefFile(dir);
 
 // ResDrive — resonant LPF with input saturation
-SynthDef(\imbolc_resdrive, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, drive=1, lag=0.02|
+SynthDef(\ilex_resdrive, { |in=1024, out=1026, cutoff_mod_in=(-1), res_mod_in=(-1), cutoff=1000, resonance=0.5, drive=1, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var cutoffMod = Select.kr(cutoff_mod_in >= 0, [0, In.kr(cutoff_mod_in)]);

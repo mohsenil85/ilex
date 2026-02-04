@@ -62,7 +62,7 @@ impl AudioEngine {
             BackendMessage {
                 addr: "/s_new".to_string(),
                 args: vec![
-                    RawArg::Str("imbolc_disk_record".to_string()),
+                    RawArg::Str("ilex_disk_record".to_string()),
                     RawArg::Int(node_id),
                     RawArg::Int(1), // addToTail
                     RawArg::Int(GROUP_RECORD),
@@ -178,7 +178,7 @@ impl AudioEngine {
             BackendMessage {
                 addr: "/s_new".to_string(),
                 args: vec![
-                    RawArg::Str("imbolc_disk_record".to_string()),
+                    RawArg::Str("ilex_disk_record".to_string()),
                     RawArg::Int(node_id),
                     RawArg::Int(1),
                     RawArg::Int(GROUP_RECORD),
@@ -252,7 +252,7 @@ impl AudioEngine {
             messages.push(BackendMessage {
                 addr: "/s_new".to_string(),
                 args: vec![
-                    RawArg::Str("imbolc_disk_record".to_string()),
+                    RawArg::Str("ilex_disk_record".to_string()),
                     RawArg::Int(node_id),
                     RawArg::Int(1),
                     RawArg::Int(GROUP_RECORD),

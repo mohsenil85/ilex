@@ -87,7 +87,7 @@ impl Config {
 }
 
 fn user_config_path() -> Option<PathBuf> {
-    dirs::config_dir().map(|d| d.join("imbolc").join("config.toml"))
+    dirs::config_dir().map(|d| d.join("ilex").join("config.toml"))
 }
 
 fn merge_defaults(base: &mut DefaultsConfig, user: DefaultsConfig) {

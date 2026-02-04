@@ -3,13 +3,13 @@
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // Meter - Reads hardware output, sends peak/RMS via /reply
-SynthDef(\imbolc_meter, {
+SynthDef(\ilex_meter, {
     SendPeakRMS.kr(In.ar(0, 2), 10, 3, "/meter");
 }).writeDefFile(dir);
 
 // Spectrum Analyzer - 7-band frequency analysis via bandpass filters
 // Sends amplitude data at ~20Hz via SendReply
-SynthDef(\imbolc_spectrum, {
+SynthDef(\ilex_spectrum, {
     var sig = In.ar(0, 2);
     var mono = (sig[0] + sig[1]) * 0.5;
     var freqs = #[60, 150, 400, 1000, 2500, 6000, 15000];
@@ -22,7 +22,7 @@ SynthDef(\imbolc_spectrum, {
 
 // LUFS Meter - K-weighted loudness measurement
 // Sends peak and RMS at ~20Hz via SendPeakRMS
-SynthDef(\imbolc_lufs_meter, {
+SynthDef(\ilex_lufs_meter, {
     var sig = In.ar(0, 2);
     // Approximate K-weighting: high-shelf boost + high-pass
     var weighted = HPF.ar(BHiShelf.ar(sig, 1500, 1, 4), 38);
@@ -30,7 +30,7 @@ SynthDef(\imbolc_lufs_meter, {
 }).writeDefFile(dir);
 
 // Scope - Sends peak amplitude at ~30Hz for oscilloscope display
-SynthDef(\imbolc_scope, {
+SynthDef(\ilex_scope, {
     var sig = In.ar(0, 2);
     var mono = (sig[0] + sig[1]) * 0.5;
     // Bipolar peak: track both positive and negative peaks
@@ -41,7 +41,7 @@ SynthDef(\imbolc_scope, {
 }).writeDefFile(dir);
 
 // Disk Recorder - Writes stereo audio from a bus to a disk-backed buffer
-SynthDef(\imbolc_disk_record, { |bufnum=0, in=0|
+SynthDef(\ilex_disk_record, { |bufnum=0, in=0|
     DiskOut.ar(bufnum, In.ar(in, 2));
 }).writeDefFile(dir);
 )

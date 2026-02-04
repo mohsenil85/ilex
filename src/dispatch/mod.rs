@@ -27,7 +27,7 @@ pub fn default_rack_path() -> PathBuf {
     if let Some(home) = std::env::var_os("HOME") {
         PathBuf::from(home)
             .join(".config")
-            .join("imbolc")
+            .join("ilex")
             .join("default.sqlite")
     } else {
         PathBuf::from("default.sqlite")

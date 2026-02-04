@@ -6,7 +6,7 @@ var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // Convolution Reverb - Uses loaded impulse response buffer
 // ir_buffer: SC buffer number of loaded IR (-1 = bypass/passthrough)
-SynthDef(\imbolc_convolution_reverb, { |in=1024, out=1026, ir_buffer=(-1), mix=0.3, predelay=0.0, lag=0.02|
+SynthDef(\ilex_convolution_reverb, { |in=1024, out=1026, ir_buffer=(-1), mix=0.3, predelay=0.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -21,7 +21,7 @@ SynthDef(\imbolc_convolution_reverb, { |in=1024, out=1026, ir_buffer=(-1), mix=0
 }).writeDefFile(dir);
 
 // Vocoder — analysis bands on input, resynthesis with oscillator bank
-SynthDef(\imbolc_vocoder, { |in=1024, out=1026, bands=16, mix=0.5, lag=0.02|
+SynthDef(\ilex_vocoder, { |in=1024, out=1026, bands=16, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -36,7 +36,7 @@ SynthDef(\imbolc_vocoder, { |in=1024, out=1026, bands=16, mix=0.5, lag=0.02|
 }).writeDefFile(dir);
 
 // Ring Modulator
-SynthDef(\imbolc_ringmod, { |in=1024, out=1026, freq=440, depth=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_ringmod, { |in=1024, out=1026, freq=440, depth=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mod = SinOsc.ar(freq.lag(lag));
@@ -45,7 +45,7 @@ SynthDef(\imbolc_ringmod, { |in=1024, out=1026, freq=440, depth=0.5, mix=0.5, la
 }).writeDefFile(dir);
 
 // Autopan — LFO-driven stereo panning (shape: 0=sine, 1=square, 2=tri)
-SynthDef(\imbolc_autopan, { |in=1024, out=1026, rate=2, depth=0.5, shape=0, mix=1.0, lag=0.02|
+SynthDef(\ilex_autopan, { |in=1024, out=1026, rate=2, depth=0.5, shape=0, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -55,7 +55,7 @@ SynthDef(\imbolc_autopan, { |in=1024, out=1026, rate=2, depth=0.5, shape=0, mix=
 }).writeDefFile(dir);
 
 // Resonator — tuned CombC feedback
-SynthDef(\imbolc_resonator, { |in=1024, out=1026, freq=440, decay=1.0, mix=0.5, lag=0.02|
+SynthDef(\ilex_resonator, { |in=1024, out=1026, freq=440, decay=1.0, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var delay = freq.lag(lag).reciprocal.clip(0.00005, 0.05);
@@ -64,7 +64,7 @@ SynthDef(\imbolc_resonator, { |in=1024, out=1026, freq=440, decay=1.0, mix=0.5, 
 }).writeDefFile(dir);
 
 // Multiband Compressor — 3-band split + independent Compander
-SynthDef(\imbolc_multiband_comp, { |in=1024, out=1026, low_thresh=0.3, mid_thresh=0.3, hi_thresh=0.3, mix=1.0, lag=0.02|
+SynthDef(\ilex_multiband_comp, { |in=1024, out=1026, low_thresh=0.3, mid_thresh=0.3, hi_thresh=0.3, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var lo = LPF.ar(sig, 250);
@@ -77,7 +77,7 @@ SynthDef(\imbolc_multiband_comp, { |in=1024, out=1026, low_thresh=0.3, mid_thres
 }).writeDefFile(dir);
 
 // Parametric EQ — 3-band BPeakEQ
-SynthDef(\imbolc_para_eq, { |in=1024, out=1026,
+SynthDef(\ilex_para_eq, { |in=1024, out=1026,
     lo_freq=200, lo_gain=0, mid_freq=1000, mid_gain=0, hi_freq=5000, hi_gain=0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
@@ -88,7 +88,7 @@ SynthDef(\imbolc_para_eq, { |in=1024, out=1026,
 }).writeDefFile(dir);
 
 // Spectral Freeze — FFT freeze + blur
-SynthDef(\imbolc_spectral_freeze, { |in=1024, out=1026, freeze=0, blur=0, mix=0.5, lag=0.02|
+SynthDef(\ilex_spectral_freeze, { |in=1024, out=1026, freeze=0, blur=0, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -101,7 +101,7 @@ SynthDef(\imbolc_spectral_freeze, { |in=1024, out=1026, freeze=0, blur=0, mix=0.
 }).writeDefFile(dir);
 
 // Glitch — buffer capture with triggered stutter replay
-SynthDef(\imbolc_glitch, { |in=1024, out=1026, rate=4, size=0.1, mix=0.5, lag=0.02|
+SynthDef(\ilex_glitch, { |in=1024, out=1026, rate=4, size=0.1, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -116,7 +116,7 @@ SynthDef(\imbolc_glitch, { |in=1024, out=1026, rate=4, size=0.1, mix=0.5, lag=0.
 }).writeDefFile(dir);
 
 // Leslie — rotary speaker (horn doppler + drum)
-SynthDef(\imbolc_leslie, { |in=1024, out=1026, speed=1, horn_depth=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_leslie, { |in=1024, out=1026, speed=1, horn_depth=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -132,7 +132,7 @@ SynthDef(\imbolc_leslie, { |in=1024, out=1026, speed=1, horn_depth=0.5, mix=0.5,
 }).writeDefFile(dir);
 
 // Spring Reverb — allpass diffusion + comb bank
-SynthDef(\imbolc_spring_reverb, { |in=1024, out=1026, decay=2.0, tone=0.5, mix=0.3, lag=0.02|
+SynthDef(\ilex_spring_reverb, { |in=1024, out=1026, decay=2.0, tone=0.5, mix=0.3, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -149,7 +149,7 @@ SynthDef(\imbolc_spring_reverb, { |in=1024, out=1026, decay=2.0, tone=0.5, mix=0
 }).writeDefFile(dir);
 
 // Envelope Follower — amplitude-shaping
-SynthDef(\imbolc_env_follower, { |in=1024, out=1026, attack=0.01, release=0.1, depth=0.5, mix=1.0, lag=0.02|
+SynthDef(\ilex_env_follower, { |in=1024, out=1026, attack=0.01, release=0.1, depth=0.5, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var follower = Amplitude.kr((sig[0] + sig[1]) * 0.5, attack.lag(lag), release.lag(lag));
@@ -158,7 +158,7 @@ SynthDef(\imbolc_env_follower, { |in=1024, out=1026, attack=0.01, release=0.1, d
 }).writeDefFile(dir);
 
 // Mid/Side — width + independent mid/side gain
-SynthDef(\imbolc_midside, { |in=1024, out=1026, width=1.0, mid_gain=0, side_gain=0, lag=0.02|
+SynthDef(\ilex_midside, { |in=1024, out=1026, width=1.0, mid_gain=0, side_gain=0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mid = (sig[0] + sig[1]) * 0.5 * (mid_gain.lag(lag) / 6).dbamp;
@@ -167,7 +167,7 @@ SynthDef(\imbolc_midside, { |in=1024, out=1026, width=1.0, mid_gain=0, side_gain
 }).writeDefFile(dir);
 
 // Crossfader — A/B crossfade between input and secondary bus
-SynthDef(\imbolc_crossfader, { |in=1024, out=1026, crossfade=0.5, bus_b=0, lag=0.02|
+SynthDef(\ilex_crossfader, { |in=1024, out=1026, crossfade=0.5, bus_b=0, lag=0.02|
     var sigA = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var sigB = Select.ar(bus_b > 0, [DC.ar(0) ! 2, In.ar(bus_b, 2)]);
@@ -176,7 +176,7 @@ SynthDef(\imbolc_crossfader, { |in=1024, out=1026, crossfade=0.5, bus_b=0, lag=0
 }).writeDefFile(dir);
 
 // Denoise — FFT spectral gate + highpass for background noise suppression
-SynthDef(\imbolc_denoise, { |in=1024, out=1026, threshold=0.3, hp_freq=80, smoothing=0.5, mix=1.0, lag=0.02|
+SynthDef(\ilex_denoise, { |in=1024, out=1026, threshold=0.3, hp_freq=80, smoothing=0.5, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var filtered = HPF.ar(sig, hp_freq.lag(lag).clip(20, 500));

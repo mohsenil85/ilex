@@ -3,7 +3,7 @@
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // Bowed — delay-line resonator excited by filtered noise
-SynthDef(\imbolc_bowed, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
+SynthDef(\ilex_bowed, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
     freq=440, amp=0.5, lag=0.02, pressure=0.5, bow_pos=0.12,
     attack=0.01, decay=0.1, sustain=0.7, release=0.3,
     amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1),
@@ -37,7 +37,7 @@ SynthDef(\imbolc_bowed, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
 }).writeDefFile(dir);
 
 // Blown — jet noise excitation + waveguide delay
-SynthDef(\imbolc_blown, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
+SynthDef(\ilex_blown, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
     freq=440, amp=0.5, lag=0.02, pressure=0.5, embouchure=0.5,
     attack=0.01, decay=0.1, sustain=0.7, release=0.3,
     amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1),
@@ -75,7 +75,7 @@ SynthDef(\imbolc_blown, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
 }).writeDefFile(dir);
 
 // Membrane — impulse into parallel modal resonators
-SynthDef(\imbolc_membrane, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
+SynthDef(\ilex_membrane, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
     freq=440, amp=0.5, lag=0.02, tension=0.05, loss=0.99,
     attack=0.001, decay=0.3, sustain=0.0, release=0.1,
     amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1),

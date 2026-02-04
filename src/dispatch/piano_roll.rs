@@ -210,7 +210,7 @@ pub(super) fn dispatch_piano_roll(
             }
 
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            let render_dir = std::path::Path::new(&home).join(".config/imbolc/renders");
+            let render_dir = std::path::Path::new(&home).join(".config/ilex/renders");
             let _ = std::fs::create_dir_all(&render_dir);
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -286,7 +286,7 @@ pub(super) fn dispatch_piano_roll(
             }
 
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            let export_dir = std::path::Path::new(&home).join(".config/imbolc/exports");
+            let export_dir = std::path::Path::new(&home).join(".config/ilex/exports");
             let _ = std::fs::create_dir_all(&export_dir);
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -333,7 +333,7 @@ pub(super) fn dispatch_piano_roll(
             }
 
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            let export_dir = std::path::Path::new(&home).join(".config/imbolc/exports");
+            let export_dir = std::path::Path::new(&home).join(".config/ilex/exports");
             let _ = std::fs::create_dir_all(&export_dir);
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

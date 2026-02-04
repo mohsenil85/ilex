@@ -59,7 +59,7 @@ impl RecentProjects {
         if let Some(home) = std::env::var_os("HOME") {
             PathBuf::from(home)
                 .join(".config")
-                .join("imbolc")
+                .join("ilex")
                 .join("recent.json")
         } else {
             PathBuf::from("recent.json")

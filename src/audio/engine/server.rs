@@ -70,7 +70,7 @@ impl AudioEngine {
         // Redirect scsynth output to a log file for crash diagnostics
         let log_path = dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("imbolc")
+            .join("ilex")
             .join("scsynth.log");
         let _ = fs::create_dir_all(log_path.parent().unwrap());
         let stdout_file = fs::File::create(&log_path).ok();
@@ -379,7 +379,7 @@ impl AudioEngine {
             let node_id = self.next_node_id;
             self.next_node_id += 1;
             let args = vec![
-                RawArg::Str("imbolc_meter".to_string()),
+                RawArg::Str("ilex_meter".to_string()),
                 RawArg::Int(node_id),
                 RawArg::Int(3), // addAfter
                 RawArg::Int(GROUP_SAFETY),
@@ -390,7 +390,7 @@ impl AudioEngine {
             }
 
             // Create analysis synths (spectrum, LUFS, scope) in GROUP_SAFETY
-            for synth_def in &["imbolc_spectrum", "imbolc_lufs_meter", "imbolc_scope"] {
+            for synth_def in &["ilex_spectrum", "ilex_lufs_meter", "ilex_scope"] {
                 let node_id = self.next_node_id;
                 self.next_node_id += 1;
                 let args = vec![
@@ -479,7 +479,7 @@ impl AudioEngine {
         let node_id = self.next_node_id;
         self.next_node_id += 1;
         let args = vec![
-            RawArg::Str("imbolc_safety".to_string()),
+            RawArg::Str("ilex_safety".to_string()),
             RawArg::Int(node_id),
             RawArg::Int(0), // addToHead
             RawArg::Int(GROUP_SAFETY),

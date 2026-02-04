@@ -31,7 +31,7 @@ impl AudioEngine {
     }
 
     // =========================================================================
-    // Wavetable Initialization (for VOsc / imbolc_wavetable)
+    // Wavetable Initialization (for VOsc / ilex_wavetable)
     // =========================================================================
 
     /// Allocate and fill wavetable buffers 100–107 so VOsc has data to read.

@@ -31,14 +31,14 @@ impl FilterType {
 
     pub fn synth_def_name(&self) -> &'static str {
         match self {
-            FilterType::Lpf => "imbolc_lpf",
-            FilterType::Hpf => "imbolc_hpf",
-            FilterType::Bpf => "imbolc_bpf",
-            FilterType::Notch => "imbolc_notch",
-            FilterType::Comb => "imbolc_comb",
-            FilterType::Allpass => "imbolc_allpass",
-            FilterType::Vowel => "imbolc_vowel",
-            FilterType::ResDrive => "imbolc_resdrive",
+            FilterType::Lpf => "ilex_lpf",
+            FilterType::Hpf => "ilex_hpf",
+            FilterType::Bpf => "ilex_bpf",
+            FilterType::Notch => "ilex_notch",
+            FilterType::Comb => "ilex_comb",
+            FilterType::Allpass => "ilex_allpass",
+            FilterType::Vowel => "ilex_vowel",
+            FilterType::ResDrive => "ilex_resdrive",
         }
     }
 

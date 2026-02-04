@@ -2,7 +2,7 @@
 (
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
-SynthDef(\imbolc_delay, { |in=1024, out=1026, time=0.3, feedback=0.5, mix=0.3, lag=0.02, time_mod_in=(-1), feedback_mod_in=(-1)|
+SynthDef(\ilex_delay, { |in=1024, out=1026, time=0.3, feedback=0.5, mix=0.3, lag=0.02, time_mod_in=(-1), feedback_mod_in=(-1)|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var timeMod = Select.kr(time_mod_in >= 0, [0, In.kr(time_mod_in)]);
@@ -13,7 +13,7 @@ SynthDef(\imbolc_delay, { |in=1024, out=1026, time=0.3, feedback=0.5, mix=0.3, l
     Out.ar(out, ((sig * (1 - mix.lag(lag))) + (delayed * mix.lag(lag))) * fadein);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_reverb, { |in=1024, out=1026, room=0.5, damp=0.5, mix=0.3, lag=0.02, mix_mod_in=(-1)|
+SynthDef(\ilex_reverb, { |in=1024, out=1026, room=0.5, damp=0.5, mix=0.3, lag=0.02, mix_mod_in=(-1)|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mixMod = Select.kr(mix_mod_in >= 0, [0, In.kr(mix_mod_in)]);
@@ -24,7 +24,7 @@ SynthDef(\imbolc_reverb, { |in=1024, out=1026, room=0.5, damp=0.5, mix=0.3, lag=
 
 // Gate/Tremolo effect
 // shape: 0=sine (tremolo), 1=square (hard gate), 2=saw (ramp)
-SynthDef(\imbolc_gate, { |in=1024, out=1026, rate=4, depth=1, shape=1, lag=0.02, rate_mod_in=(-1)|
+SynthDef(\ilex_gate, { |in=1024, out=1026, rate=4, depth=1, shape=1, lag=0.02, rate_mod_in=(-1)|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var rateMod = Select.kr(rate_mod_in >= 0, [0, In.kr(rate_mod_in)]);
@@ -38,7 +38,7 @@ SynthDef(\imbolc_gate, { |in=1024, out=1026, rate=4, depth=1, shape=1, lag=0.02,
 }).writeDefFile(dir);
 
 // Tape Compressor - warm analog-style compression with saturation
-SynthDef(\imbolc_tape_comp, { |in=1024, out=1026, drive=1.5, threshold=0.5, ratio=3, makeup=1.0, mix=1.0, lag=0.02|
+SynthDef(\ilex_tape_comp, { |in=1024, out=1026, drive=1.5, threshold=0.5, ratio=3, makeup=1.0, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var driven = (sig * drive.lag(lag)).tanh;
@@ -54,7 +54,7 @@ SynthDef(\imbolc_tape_comp, { |in=1024, out=1026, drive=1.5, threshold=0.5, rati
 }).writeDefFile(dir);
 
 // Sidechain Compressor - driven by external bus signal
-SynthDef(\imbolc_sc_comp, { |in=1024, out=1026, sidechain_in=0, threshold=0.3, ratio=4, attack=0.01, release=0.1, mix=1.0, lag=0.02|
+SynthDef(\ilex_sc_comp, { |in=1024, out=1026, sidechain_in=0, threshold=0.3, ratio=4, attack=0.01, release=0.1, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var scSig = Select.ar(sidechain_in > 0, [sig, In.ar(sidechain_in, 2)]);
@@ -69,7 +69,7 @@ SynthDef(\imbolc_sc_comp, { |in=1024, out=1026, sidechain_in=0, threshold=0.3, r
 }).writeDefFile(dir);
 
 // Chorus — DelayL + SinOsc modulation
-SynthDef(\imbolc_chorus, { |in=1024, out=1026, rate=0.5, depth=0.005, mix=0.5, lag=0.02|
+SynthDef(\ilex_chorus, { |in=1024, out=1026, rate=0.5, depth=0.005, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var modL = SinOsc.kr(rate, 0) * depth;
@@ -82,7 +82,7 @@ SynthDef(\imbolc_chorus, { |in=1024, out=1026, rate=0.5, depth=0.005, mix=0.5, l
 }).writeDefFile(dir);
 
 // Flanger — CombL with short modulated delay
-SynthDef(\imbolc_flanger, { |in=1024, out=1026, rate=0.3, depth=0.003, feedback=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_flanger, { |in=1024, out=1026, rate=0.3, depth=0.003, feedback=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mod = SinOsc.kr(rate) * depth;
@@ -92,7 +92,7 @@ SynthDef(\imbolc_flanger, { |in=1024, out=1026, rate=0.3, depth=0.003, feedback=
 }).writeDefFile(dir);
 
 // Phaser — AllpassL chain with LFO sweep
-SynthDef(\imbolc_phaser, { |in=1024, out=1026, rate=0.5, depth=0.5, stages=4, feedback=0.3, mix=0.5, lag=0.02|
+SynthDef(\ilex_phaser, { |in=1024, out=1026, rate=0.5, depth=0.5, stages=4, feedback=0.3, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var lfo = SinOsc.kr(rate).range(200, 4000);
@@ -111,7 +111,7 @@ SynthDef(\imbolc_phaser, { |in=1024, out=1026, rate=0.5, depth=0.5, stages=4, fe
 
 // Tremolo — Amplitude modulation, shape-selectable
 // shape: 0=sine, 1=square, 2=saw
-SynthDef(\imbolc_tremolo, { |in=1024, out=1026, rate=4, depth=0.5, shape=0, mix=1.0, lag=0.02|
+SynthDef(\ilex_tremolo, { |in=1024, out=1026, rate=4, depth=0.5, shape=0, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var sine = SinOsc.kr(rate).range(1 - depth, 1);
@@ -124,7 +124,7 @@ SynthDef(\imbolc_tremolo, { |in=1024, out=1026, rate=4, depth=0.5, shape=0, mix=
 
 // Distortion — hard clip / soft clip / foldback
 // mode: 0=hard clip, 1=soft clip (tanh), 2=foldback
-SynthDef(\imbolc_distortion, { |in=1024, out=1026, drive=2, mode=0, tone=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_distortion, { |in=1024, out=1026, drive=2, mode=0, tone=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var driven = sig * drive.lag(lag);
@@ -138,7 +138,7 @@ SynthDef(\imbolc_distortion, { |in=1024, out=1026, drive=2, mode=0, tone=0.5, mi
 }).writeDefFile(dir);
 
 // Bitcrusher — Latch + bit reduction
-SynthDef(\imbolc_bitcrusher, { |in=1024, out=1026, rate=8000, bits=8, mix=0.5, lag=0.02|
+SynthDef(\ilex_bitcrusher, { |in=1024, out=1026, rate=8000, bits=8, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var crushed = Latch.ar(sig, Impulse.ar(rate));
@@ -148,7 +148,7 @@ SynthDef(\imbolc_bitcrusher, { |in=1024, out=1026, rate=8000, bits=8, mix=0.5, l
 }).writeDefFile(dir);
 
 // Wavefolder — fold2 with drive
-SynthDef(\imbolc_wavefolder, { |in=1024, out=1026, drive=1, symmetry=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_wavefolder, { |in=1024, out=1026, drive=1, symmetry=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var offset = (symmetry.lag(lag) - 0.5) * 0.5;
@@ -158,7 +158,7 @@ SynthDef(\imbolc_wavefolder, { |in=1024, out=1026, drive=1, symmetry=0.5, mix=0.
 }).writeDefFile(dir);
 
 // Saturator — tanh saturation + tone filter
-SynthDef(\imbolc_saturator, { |in=1024, out=1026, drive=1.5, color=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_saturator, { |in=1024, out=1026, drive=1.5, color=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var saturated = (sig * drive.lag(lag)).tanh;
@@ -168,7 +168,7 @@ SynthDef(\imbolc_saturator, { |in=1024, out=1026, drive=1.5, color=0.5, mix=0.5,
 }).writeDefFile(dir);
 
 // Tilt EQ — BLowShelf + BHiShelf complementary
-SynthDef(\imbolc_tilt_eq, { |in=1024, out=1026, tilt=0, frequency=1000, lag=0.02|
+SynthDef(\ilex_tilt_eq, { |in=1024, out=1026, tilt=0, frequency=1000, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var tiltDb = tilt.lag(lag) * 12; // -12 to +12 dB
@@ -178,7 +178,7 @@ SynthDef(\imbolc_tilt_eq, { |in=1024, out=1026, tilt=0, frequency=1000, lag=0.02
 }).writeDefFile(dir);
 
 // Stereo Widener — Mid/Side processing
-SynthDef(\imbolc_stereo_widener, { |in=1024, out=1026, width=1, mix=1.0, lag=0.02|
+SynthDef(\ilex_stereo_widener, { |in=1024, out=1026, width=1, mix=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mid = (sig[0] + sig[1]) * 0.5;
@@ -189,7 +189,7 @@ SynthDef(\imbolc_stereo_widener, { |in=1024, out=1026, width=1, mix=1.0, lag=0.0
 }).writeDefFile(dir);
 
 // Frequency Shifter — FreqShift UGen
-SynthDef(\imbolc_freq_shifter, { |in=1024, out=1026, shift_hz=0, mix=0.5, lag=0.02|
+SynthDef(\ilex_freq_shifter, { |in=1024, out=1026, shift_hz=0, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var wet = FreqShift.ar(sig, shift_hz.lag(lag));
@@ -197,7 +197,7 @@ SynthDef(\imbolc_freq_shifter, { |in=1024, out=1026, shift_hz=0, mix=0.5, lag=0.
 }).writeDefFile(dir);
 
 // Limiter — Limiter UGen
-SynthDef(\imbolc_limiter, { |in=1024, out=1026, threshold=0.9, release=0.01, ceiling=1.0, lag=0.02|
+SynthDef(\ilex_limiter, { |in=1024, out=1026, threshold=0.9, release=0.01, ceiling=1.0, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var limited = Limiter.ar(sig, threshold.lag(lag), release.lag(lag));
@@ -205,7 +205,7 @@ SynthDef(\imbolc_limiter, { |in=1024, out=1026, threshold=0.9, release=0.01, cei
 }).writeDefFile(dir);
 
 // Pitch Shifter — PitchShift UGen
-SynthDef(\imbolc_pitch_shifter, { |in=1024, out=1026, shift=0, window=0.2, mix=0.5, lag=0.02|
+SynthDef(\ilex_pitch_shifter, { |in=1024, out=1026, shift=0, window=0.2, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var ratio = 2 ** (shift.lag(lag) / 12); // semitones to ratio
@@ -214,7 +214,7 @@ SynthDef(\imbolc_pitch_shifter, { |in=1024, out=1026, shift=0, window=0.2, mix=0
 }).writeDefFile(dir);
 
 // Vinyl — DelayL wow/flutter + Dust crackle + HPF hiss
-SynthDef(\imbolc_vinyl, { |in=1024, out=1026, wow=0.3, flutter=0.3, noise=0.1, hiss=0.05, mix=0.5, lag=0.02|
+SynthDef(\ilex_vinyl, { |in=1024, out=1026, wow=0.3, flutter=0.3, noise=0.1, hiss=0.05, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     // Wow (slow pitch modulation) and flutter (fast pitch modulation)
@@ -232,7 +232,7 @@ SynthDef(\imbolc_vinyl, { |in=1024, out=1026, wow=0.3, flutter=0.3, noise=0.1, h
 
 // Cabinet — Shaped LPF profiles + mild saturation
 // type: 0=small combo, 1=large combo, 2=4x12 stack, 3=open back
-SynthDef(\imbolc_cabinet, { |in=1024, out=1026, type=0, tone=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_cabinet, { |in=1024, out=1026, type=0, tone=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var toneFreq = tone.lag(lag);
@@ -246,7 +246,7 @@ SynthDef(\imbolc_cabinet, { |in=1024, out=1026, type=0, tone=0.5, mix=0.5, lag=0
 }).writeDefFile(dir);
 
 // Granular Delay — BufWr + TGrains into LocalBuf
-SynthDef(\imbolc_granular_delay, { |in=1024, out=1026, time=0.3, grain_size=0.1, density=10, pitch=0, mix=0.5, lag=0.02|
+SynthDef(\ilex_granular_delay, { |in=1024, out=1026, time=0.3, grain_size=0.1, density=10, pitch=0, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;
@@ -263,7 +263,7 @@ SynthDef(\imbolc_granular_delay, { |in=1024, out=1026, time=0.3, grain_size=0.1,
 }).writeDefFile(dir);
 
 // Granular Freeze — Frozen grain position + scatter
-SynthDef(\imbolc_granular_freeze, { |in=1024, out=1026, grain_size=0.1, density=10, pitch=0, spread=0.5, mix=0.5, lag=0.02|
+SynthDef(\ilex_granular_freeze, { |in=1024, out=1026, grain_size=0.1, density=10, pitch=0, spread=0.5, mix=0.5, lag=0.02|
     var sig = In.ar(in, 2);
     var fadein = Line.kr(0, 1, 0.01);
     var mono = (sig[0] + sig[1]) * 0.5;

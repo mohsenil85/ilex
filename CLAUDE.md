@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-Guide for AI agents working on imbolc-core.
+Guide for AI agents working on ilex.
 
 ## What This Is
 
-The core library for imbolc, a terminal-based DAW (Digital Audio Workstation) in Rust. Contains all application state, action dispatch, audio engine (SuperCollider via OSC), persistence, and domain logic. The TUI binary lives in a sibling repo at `../imbolc`.
+The core library for ilex, a terminal-based DAW (Digital Audio Workstation) in Rust. Contains all application state, action dispatch, audio engine (SuperCollider via OSC), persistence, and domain logic. The TUI binary lives in a sibling repo at `../ilex`.
 
 ## Directory Structure
 
@@ -67,16 +67,16 @@ cargo test
 
 TOML-based configuration with embedded defaults and optional user overrides.
 
-- **Musical defaults:** `config.toml` (embedded via `include_str!`) + `~/.config/imbolc/config.toml` (user override)
+- **Musical defaults:** `config.toml` (embedded via `include_str!`) + `~/.config/ilex/config.toml` (user override)
 - Config loading: `src/config.rs` — `Config::load()` parses embedded defaults, layers user overrides
 
 Musical defaults (`[defaults]` section): `bpm`, `key`, `scale`, `tuning_a4`, `time_signature`, `snap`
 
 ## Persistence
 
-- Format: SQLite database (`.imbolc` / `.sqlite`)
+- Format: SQLite database (`.ilex` / `.sqlite`)
 - Save/load: `save_project()` / `load_project()` in `src/state/persistence/mod.rs`
-- Default path: `~/.config/imbolc/default.sqlite`
+- Default path: `~/.config/ilex/default.sqlite`
 - Persists: instruments, params, effects, filters, sends, modulations, buses, mixer, piano roll, automation, sampler configs, custom synthdefs, drum sequencer, midi settings, VST plugins, VST param values (source + effects), VST state paths
 
 ## Plans

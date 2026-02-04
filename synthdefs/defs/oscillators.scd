@@ -3,7 +3,7 @@
 (
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
-SynthDef(\imbolc_saw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_saw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -25,7 +25,7 @@ SynthDef(\imbolc_saw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq
     Out.ar(out, (sig * env) ! 2);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_sin, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_sin, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -47,7 +47,7 @@ SynthDef(\imbolc_sin, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq
     Out.ar(out, (sig * env) ! 2);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_sqr, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), width_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_sqr, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), width_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -70,7 +70,7 @@ SynthDef(\imbolc_sqr, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq
     Out.ar(out, (sig * env) ! 2);
 }).writeDefFile(dir);
 
-SynthDef(\imbolc_tri, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_tri, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -93,7 +93,7 @@ SynthDef(\imbolc_tri, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq
 }).writeDefFile(dir);
 
 // Noise — White/Pink/Brown/Crackle/Dust selectable via color param
-SynthDef(\imbolc_noise, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, color=0, density=20, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_noise, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, color=0, density=20, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
     var ampMod = Select.kr(amp_mod_in >= 0, [0, In.kr(amp_mod_in)]);
@@ -112,7 +112,7 @@ SynthDef(\imbolc_noise, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), am
 }).writeDefFile(dir);
 
 // Pulse — Variable pulse width oscillator (PWM)
-SynthDef(\imbolc_pulse, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, width=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), width_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\ilex_pulse, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, width=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), width_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
