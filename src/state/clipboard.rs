@@ -1,15 +1,7 @@
 use super::drum_sequencer::DrumStep;
 
-/// A note stored with position relative to the selection anchor.
-/// anchor = (min_tick of selected notes, min_pitch of selected notes)
-#[derive(Debug, Clone, PartialEq)]
-pub struct ClipboardNote {
-    pub tick_offset: u32,    // tick - anchor_tick
-    pub pitch_offset: i16,   // pitch as i16 - anchor_pitch as i16
-    pub duration: u32,
-    pub velocity: u8,
-    pub probability: f32,
-}
+// Re-export ClipboardNote from imbolc-types
+pub use imbolc_types::ClipboardNote;
 
 /// Clipboard contents — one variant per context
 #[derive(Debug, Clone)]

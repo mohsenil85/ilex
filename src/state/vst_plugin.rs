@@ -5,11 +5,8 @@ use std::path::PathBuf;
 
 pub type VstPluginId = u32;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum VstPluginKind {
-    Instrument,
-    Effect,
-}
+// Re-export VstPluginKind from imbolc-types
+pub use imbolc_types::VstPluginKind;
 
 /// Specification for a VST parameter
 #[derive(Debug, Clone, Serialize, Deserialize)]

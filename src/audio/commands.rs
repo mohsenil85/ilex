@@ -9,7 +9,6 @@ use std::sync::mpsc::Sender;
 use crate::action::VstTarget;
 use crate::audio::snapshot::{AutomationSnapshot, InstrumentSnapshot, PianoRollSnapshot, SessionSnapshot};
 use crate::state::automation::AutomationTarget;
-use crate::state::vst_plugin::VstPluginId;
 use crate::state::{BufferId, EffectId, InstrumentId};
 
 /// Commands sent from the main thread to the audio engine.
@@ -253,62 +252,5 @@ impl AudioCmd {
     }
 }
 
-/// Feedback sent from the audio thread back to the main thread.
-///
-/// In Phase 3 these are received via mpsc::Receiver and polled each frame.
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum AudioFeedback {
-    PlayheadPosition(u32),
-    BpmUpdate(f32),
-    DrumSequencerStep {
-        instrument_id: InstrumentId,
-        step: usize,
-    },
-    ServerStatus {
-        status: super::ServerStatus,
-        message: String,
-        server_running: bool,
-    },
-    RecordingState {
-        is_recording: bool,
-        elapsed_secs: u64,
-    },
-    RecordingStopped(PathBuf),
-    RenderComplete {
-        instrument_id: InstrumentId,
-        path: PathBuf,
-    },
-    CompileResult(Result<String, String>),
-    PendingBufferFreed,
-    VstParamsDiscovered {
-        instrument_id: InstrumentId,
-        target: VstTarget,
-        vst_plugin_id: VstPluginId,
-        params: Vec<(u32, String, Option<String>, f32)>, // (index, name, label, default)
-    },
-    VstStateSaved {
-        instrument_id: InstrumentId,
-        target: VstTarget,
-        path: PathBuf,
-    },
-    ExportComplete {
-        kind: ExportKind,
-        paths: Vec<PathBuf>,
-    },
-    ExportProgress {
-        progress: f32,
-    },
-    /// The scsynth server process crashed or became unreachable.
-    /// All tracked nodes have been invalidated.
-    ServerCrashed {
-        message: String,
-    },
-}
-
-/// Export operation type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExportKind {
-    MasterBounce,
-    StemExport,
-}
+// Re-export AudioFeedback and ExportKind from imbolc-types
+pub use imbolc_types::{AudioFeedback, ExportKind};

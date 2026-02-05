@@ -1,6 +1,9 @@
 use super::sampler::{BufferId, Slice, SliceId};
 use serde::{Serialize, Deserialize};
 
+// Re-export DrumStep from imbolc-types
+pub use imbolc_types::DrumStep;
+
 pub const NUM_PADS: usize = 12;
 pub const DEFAULT_STEPS: usize = 16;
 pub const NUM_PATTERNS: usize = 4;
@@ -15,25 +18,6 @@ pub struct ChopperState {
     pub next_slice_id: SliceId,
     pub waveform_peaks: Vec<f32>,
     pub duration_secs: f32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DrumStep {
-    pub active: bool,
-    pub velocity: u8, // 1-127, default 100
-    pub probability: f32, // 0.0-1.0, default 1.0 (always play)
-    pub pitch_offset: i8, // semitone offset per step, default 0
-}
-
-impl Default for DrumStep {
-    fn default() -> Self {
-        Self {
-            active: false,
-            velocity: 100,
-            probability: 1.0,
-            pitch_offset: 0,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

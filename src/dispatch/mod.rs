@@ -4,6 +4,7 @@ mod audio_feedback;
 mod bus;
 mod helpers;
 mod instrument;
+mod local;
 mod midi;
 mod mixer;
 mod piano_roll;
@@ -11,6 +12,8 @@ mod sequencer;
 mod server;
 mod session;
 mod vst_param;
+
+pub use local::LocalDispatcher;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
