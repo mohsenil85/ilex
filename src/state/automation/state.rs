@@ -138,4 +138,20 @@ impl AutomationState {
             }
         }
     }
+
+    /// Remove all lanes for a bus (when bus is deleted)
+    pub fn remove_lanes_for_bus(&mut self, bus_id: u8) {
+        use super::AutomationTarget;
+        self.lanes.retain(|l| !matches!(l.target, AutomationTarget::BusLevel(id) if id == bus_id));
+        // Adjust selection
+        if let Some(sel) = self.selected_lane {
+            if sel >= self.lanes.len() {
+                self.selected_lane = if self.lanes.is_empty() {
+                    None
+                } else {
+                    Some(self.lanes.len() - 1)
+                };
+            }
+        }
+    }
 }

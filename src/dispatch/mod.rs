@@ -1,6 +1,7 @@
 mod automation;
 mod arrangement;
 mod audio_feedback;
+mod bus;
 mod helpers;
 mod instrument;
 mod midi;
@@ -75,6 +76,7 @@ pub fn dispatch_action(
         Action::Chopper(a) => sequencer::dispatch_chopper(a, state, audio),
         Action::Automation(a) => automation::dispatch_automation(a, state, audio),
         Action::Midi(a) => midi::dispatch_midi(a, state),
+        Action::Bus(a) => bus::dispatch_bus(a, state, audio),
         Action::VstParam(a) => vst_param::dispatch_vst_param(a, state, audio),
         Action::AudioFeedback(f) => audio_feedback::dispatch_audio_feedback(f, state, audio),
         Action::None => DispatchResult::none(),

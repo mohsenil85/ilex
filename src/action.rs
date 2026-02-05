@@ -305,6 +305,17 @@ pub enum MidiAction {
     ToggleNotePassthrough,
 }
 
+/// Bus management actions
+#[derive(Debug, Clone, PartialEq)]
+pub enum BusAction {
+    /// Add a new bus
+    Add,
+    /// Remove a bus by ID
+    Remove(u8),
+    /// Rename a bus
+    Rename(u8, String),
+}
+
 /// Actions that can be returned from pane input handling
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -321,6 +332,7 @@ pub enum Action {
     Chopper(ChopperAction),
     Automation(AutomationAction),
     Midi(MidiAction),
+    Bus(BusAction),
     VstParam(VstParamAction),
     AudioFeedback(crate::audio::commands::AudioFeedback),
     /// Pane signals: pop piano_mode/pad_mode layer

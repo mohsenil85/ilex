@@ -10,7 +10,12 @@ use serde::{Serialize, Deserialize};
 
 // Re-export types from imbolc-types
 pub use imbolc_types::{MixerSelection, MusicalSettings};
-pub use imbolc_types::MAX_BUSES;
+
+/// Maximum number of buses allowed (shadows imbolc_types::MAX_BUSES for dynamic buses support)
+pub const MAX_BUSES: u8 = 32;
+
+/// Default number of buses for new projects
+pub const DEFAULT_BUS_COUNT: u8 = 8;
 
 /// Project-level state container.
 /// Owns musical settings, piano roll, automation, mixer buses, and other project data.
@@ -32,6 +37,9 @@ pub struct SessionState {
     pub custom_synthdefs: CustomSynthDefRegistry,
     pub vst_plugins: VstPluginRegistry,
     pub buses: Vec<MixerBus>,
+    /// Next bus ID to assign (never reused, always increments)
+    #[serde(skip)]
+    pub next_bus_id: u8,
     pub master_level: f32,
     pub master_mute: bool,
     #[serde(skip)]
@@ -44,11 +52,13 @@ pub struct SessionState {
 
 impl SessionState {
     pub fn new() -> Self {
-        Self::new_with_defaults(MusicalSettings::default())
+        Self::new_with_defaults(MusicalSettings::default(), DEFAULT_BUS_COUNT)
     }
 
-    pub fn new_with_defaults(defaults: MusicalSettings) -> Self {
-        let buses = (1..=MAX_BUSES as u8).map(MixerBus::new).collect();
+    pub fn new_with_defaults(defaults: MusicalSettings, bus_count: u8) -> Self {
+        let bus_count = bus_count.min(MAX_BUSES);
+        let buses: Vec<MixerBus> = (1..=bus_count).map(MixerBus::new).collect();
+        let next_bus_id = bus_count + 1;
         Self {
             key: defaults.key,
             scale: defaults.scale,
@@ -63,6 +73,7 @@ impl SessionState {
             custom_synthdefs: CustomSynthDefRegistry::new(),
             vst_plugins: VstPluginRegistry::new(),
             buses,
+            next_bus_id,
             master_level: 1.0,
             master_mute: false,
             mixer_selection: MixerSelection::default(),
@@ -93,12 +104,40 @@ impl SessionState {
         self.time_signature = settings.time_signature;
     }
 
+    /// Get a bus by ID
     pub fn bus(&self, id: u8) -> Option<&MixerBus> {
-        self.buses.get((id - 1) as usize)
+        self.buses.iter().find(|b| b.id == id)
     }
 
+    /// Get a mutable bus by ID
     pub fn bus_mut(&mut self, id: u8) -> Option<&mut MixerBus> {
-        self.buses.get_mut((id - 1) as usize)
+        self.buses.iter_mut().find(|b| b.id == id)
+    }
+
+    /// Get an iterator over current bus IDs in order
+    pub fn bus_ids(&self) -> impl Iterator<Item = u8> + '_ {
+        self.buses.iter().map(|b| b.id)
+    }
+
+    /// Add a new bus. Returns the new bus ID, or None if at max capacity.
+    pub fn add_bus(&mut self) -> Option<u8> {
+        if self.buses.len() >= MAX_BUSES as usize {
+            return None;
+        }
+        let id = self.next_bus_id;
+        self.next_bus_id = self.next_bus_id.saturating_add(1);
+        self.buses.push(MixerBus::new(id));
+        Some(id)
+    }
+
+    /// Remove a bus by ID. Returns true if the bus was found and removed.
+    pub fn remove_bus(&mut self, id: u8) -> bool {
+        if let Some(idx) = self.buses.iter().position(|b| b.id == id) {
+            self.buses.remove(idx);
+            true
+        } else {
+            false
+        }
     }
 
     /// Check if any bus is soloed
@@ -118,10 +157,22 @@ impl SessionState {
     /// Cycle between instrument/bus/master sections
     pub fn mixer_cycle_section(&mut self) {
         self.mixer_selection = match self.mixer_selection {
-            MixerSelection::Instrument(_) => MixerSelection::Bus(1),
+            MixerSelection::Instrument(_) => {
+                // Select first bus if any exist, otherwise skip to master
+                if let Some(first_id) = self.buses.first().map(|b| b.id) {
+                    MixerSelection::Bus(first_id)
+                } else {
+                    MixerSelection::Master
+                }
+            }
             MixerSelection::Bus(_) => MixerSelection::Master,
             MixerSelection::Master => MixerSelection::Instrument(0),
         };
+    }
+
+    /// Recompute next_bus_id from current buses (call after loading from persistence)
+    pub fn recompute_next_bus_id(&mut self) {
+        self.next_bus_id = self.buses.iter().map(|b| b.id).max().unwrap_or(0).saturating_add(1);
     }
 }
 
@@ -136,26 +187,60 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bus_1based_indexing() {
+    fn bus_lookup_by_id() {
         let session = SessionState::new();
         assert!(session.bus(1).is_some());
         assert_eq!(session.bus(1).unwrap().id, 1);
         assert!(session.bus(8).is_some());
         assert_eq!(session.bus(8).unwrap().id, 8);
-    }
-
-    #[test]
-    #[should_panic(expected = "subtract with overflow")]
-    fn bus_0_panics() {
-        let session = SessionState::new();
-        // bus(0) does `id - 1` on u8 0, which panics in debug mode
-        let _ = session.bus(0);
-    }
-
-    #[test]
-    fn bus_out_of_bounds() {
-        let session = SessionState::new();
+        // Non-existent IDs return None
+        assert!(session.bus(0).is_none());
         assert!(session.bus(9).is_none());
+        assert!(session.bus(100).is_none());
+    }
+
+    #[test]
+    fn add_bus_increments_id() {
+        let mut session = SessionState::new();
+        assert_eq!(session.buses.len(), DEFAULT_BUS_COUNT as usize);
+        let new_id = session.add_bus().unwrap();
+        assert_eq!(new_id, DEFAULT_BUS_COUNT + 1);
+        assert_eq!(session.buses.len(), DEFAULT_BUS_COUNT as usize + 1);
+        assert!(session.bus(new_id).is_some());
+    }
+
+    #[test]
+    fn add_bus_respects_max_limit() {
+        let mut session = SessionState::new_with_defaults(MusicalSettings::default(), MAX_BUSES);
+        assert_eq!(session.buses.len(), MAX_BUSES as usize);
+        assert!(session.add_bus().is_none());
+        assert_eq!(session.buses.len(), MAX_BUSES as usize);
+    }
+
+    #[test]
+    fn remove_bus() {
+        let mut session = SessionState::new();
+        assert!(session.bus(3).is_some());
+        assert!(session.remove_bus(3));
+        assert!(session.bus(3).is_none());
+        // Removing non-existent bus returns false
+        assert!(!session.remove_bus(3));
+        assert!(!session.remove_bus(100));
+    }
+
+    #[test]
+    fn bus_ids_iterator() {
+        let session = SessionState::new();
+        let ids: Vec<u8> = session.bus_ids().collect();
+        assert_eq!(ids, (1..=DEFAULT_BUS_COUNT).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn recompute_next_bus_id() {
+        let mut session = SessionState::new();
+        session.next_bus_id = 0; // Simulate loading from persistence
+        session.recompute_next_bus_id();
+        assert_eq!(session.next_bus_id, DEFAULT_BUS_COUNT + 1);
     }
 
     #[test]

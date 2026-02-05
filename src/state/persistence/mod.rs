@@ -61,10 +61,13 @@ fn load_project_blob(conn: &SqlConnection) -> SqlResult<(SessionState, Instrumen
         ));
     }
 
-    let session = blob::deserialize_session(&session_bytes)
+    let mut session = blob::deserialize_session(&session_bytes)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(e.into()))?;
     let instruments = blob::deserialize_instruments(&instrument_bytes)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(e.into()))?;
+
+    // Recompute next_bus_id from loaded buses (not persisted, computed on load)
+    session.recompute_next_bus_id();
 
     Ok((session, instruments))
 }

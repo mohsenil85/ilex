@@ -106,7 +106,7 @@ pub(super) fn dispatch_session(
         }
         SessionAction::NewProject => {
             let defaults = state.default_settings.clone();
-            state.session = crate::state::SessionState::new_with_defaults(defaults);
+            state.session = crate::state::SessionState::new_with_defaults(defaults, crate::state::session::DEFAULT_BUS_COUNT);
             state.instruments = crate::state::InstrumentState::new();
             state.project_path = None;
             state.dirty = false;
