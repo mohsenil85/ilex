@@ -107,7 +107,7 @@ impl AudioHandle {
     /// Fire-and-forget: send a command and log if the audio thread is disconnected.
     fn send(&self, cmd: AudioCmd) {
         if let Err(e) = self.send_cmd(cmd) {
-            eprintln!("[audio] command dropped: {}", e);
+            log::warn!(target: "audio", "command dropped: {}", e);
         }
     }
 
@@ -223,7 +223,7 @@ impl AudioHandle {
         // ── Targeted param updates (bypass full state clone + rebuild) ──
         if let Some((instrument_id, param_kind, value)) = dirty.filter_param {
             if let Err(e) = self.set_filter_param(instrument_id, param_kind.as_str(), value) {
-                eprintln!("[audio] set_filter_param dropped: {}", e);
+                log::warn!(target: "audio", "set_filter_param dropped: {}", e);
             }
         }
         if let Some((instrument_id, effect_id, param_idx, value)) = dirty.effect_param {
@@ -232,7 +232,7 @@ impl AudioHandle {
                 if let Some(effect) = inst.effect_by_id(effect_id) {
                     if let Some(param) = effect.params.get(param_idx) {
                         if let Err(e) = self.set_effect_param(instrument_id, effect_id, &param.name, value) {
-                            eprintln!("[audio] set_effect_param dropped: {}", e);
+                            log::warn!(target: "audio", "set_effect_param dropped: {}", e);
                         }
                     }
                 }
@@ -240,7 +240,7 @@ impl AudioHandle {
         }
         if let Some((instrument_id, param_kind, value)) = dirty.lfo_param {
             if let Err(e) = self.set_lfo_param(instrument_id, param_kind.as_str(), value) {
-                eprintln!("[audio] set_lfo_param dropped: {}", e);
+                log::warn!(target: "audio", "set_lfo_param dropped: {}", e);
             }
         }
     }

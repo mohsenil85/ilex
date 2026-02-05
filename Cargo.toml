@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 imbolc-types = { path = "../imbolc-types" }
+log = "0.4"
 rusqlite = { version = "0.31", features = ["bundled"] }
 rosc = "0.10"
 midir = "0.9"
