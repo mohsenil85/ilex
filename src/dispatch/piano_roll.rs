@@ -489,11 +489,12 @@ mod tests {
     #[test]
     fn toggle_loop_flips() {
         let (mut state, mut audio) = setup();
-        assert!(!state.session.piano_roll.looping);
-        dispatch_piano_roll(&PianoRollAction::ToggleLoop, &mut state, &mut audio);
+        // Default is looping=true
         assert!(state.session.piano_roll.looping);
         dispatch_piano_roll(&PianoRollAction::ToggleLoop, &mut state, &mut audio);
         assert!(!state.session.piano_roll.looping);
+        dispatch_piano_roll(&PianoRollAction::ToggleLoop, &mut state, &mut audio);
+        assert!(state.session.piano_roll.looping);
     }
 
     #[test]

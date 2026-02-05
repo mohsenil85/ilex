@@ -269,6 +269,7 @@ dependencies = [
  "crossbeam-channel",
  "dirs",
  "hound",
+ "imbolc-types",
  "libloading",
  "midir",
  "regex",
@@ -280,6 +281,13 @@ dependencies = [
  "tempfile",
  "toml",
  "vst3",
+]
+
+[[package]]
+name = "imbolc-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
