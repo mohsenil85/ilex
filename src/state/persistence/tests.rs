@@ -145,6 +145,12 @@ mod tests {
 
         let custom_inst_id = instruments.add_instrument(SourceType::Custom(custom_id));
 
+        // Sync sends for all instruments with session buses
+        let bus_ids: Vec<u8> = session.bus_ids().collect();
+        for inst in &mut instruments.instruments {
+            inst.sync_sends_with_buses(&bus_ids);
+        }
+
         // Saw instrument: filter, mod source, effect, output, send, and source param
         if let Some(inst) = instruments.instrument_mut(saw_id) {
             inst.filter = Some(FilterConfig::new(FilterType::Hpf));

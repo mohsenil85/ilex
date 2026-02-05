@@ -27,7 +27,7 @@ pub use instrument::{InstrumentSection, instrument_row_count, instrument_section
 pub use instrument_state::InstrumentState;
 pub use param::{Param, ParamValue, adjust_freq_semitone, adjust_musical_step, is_freq_param};
 pub use sampler::BufferId;
-pub use session::{MixerSelection, MusicalSettings, SessionState, MAX_BUSES};
+pub use session::{MixerSelection, MusicalSettings, SessionState, MAX_BUSES, DEFAULT_BUS_COUNT};
 pub use undo::UndoHistory;
 pub use vst_plugin::{VstParamSpec, VstPlugin, VstPluginId, VstPluginKind, VstPluginRegistry};
 
@@ -185,7 +185,7 @@ impl AppState {
 
     pub fn new_with_defaults(defaults: MusicalSettings) -> Self {
         Self {
-            session: SessionState::new_with_defaults(defaults.clone()),
+            session: SessionState::new_with_defaults(defaults.clone(), session::DEFAULT_BUS_COUNT),
             instruments: InstrumentState::new(),
             clipboard: Clipboard::default(),
             pending_recording_path: None,
@@ -256,6 +256,12 @@ impl AppState {
         // Always add a piano roll track for every instrument
         self.session.piano_roll.add_track(id);
 
+        // Sync sends with current buses
+        let bus_ids: Vec<u8> = self.session.bus_ids().collect();
+        if let Some(inst) = self.instruments.instrument_mut(id) {
+            inst.sync_sends_with_buses(&bus_ids);
+        }
+
         id
     }
 
@@ -285,9 +291,16 @@ impl AppState {
                     as usize;
                 MixerSelection::Instrument(new_idx)
             }
-            MixerSelection::Bus(id) => {
-                let new_id = (id as i8 + delta).clamp(1, MAX_BUSES as i8) as u8;
-                MixerSelection::Bus(new_id)
+            MixerSelection::Bus(current_id) => {
+                // Find current position and move by delta
+                let bus_ids: Vec<u8> = self.session.bus_ids().collect();
+                if bus_ids.is_empty() {
+                    return;
+                }
+                let current_pos = bus_ids.iter().position(|&id| id == current_id).unwrap_or(0);
+                let new_pos = (current_pos as i32 + delta as i32)
+                    .clamp(0, bus_ids.len().saturating_sub(1) as i32) as usize;
+                MixerSelection::Bus(bus_ids[new_pos])
             }
             MixerSelection::Master => MixerSelection::Master,
         };
@@ -304,10 +317,14 @@ impl AppState {
                 }
             }
             MixerSelection::Bus(_) => {
+                let bus_ids: Vec<u8> = self.session.bus_ids().collect();
+                if bus_ids.is_empty() {
+                    return;
+                }
                 if direction > 0 {
-                    MixerSelection::Bus(1)
+                    MixerSelection::Bus(bus_ids[0])
                 } else {
-                    MixerSelection::Bus(MAX_BUSES as u8)
+                    MixerSelection::Bus(*bus_ids.last().unwrap())
                 }
             }
             MixerSelection::Master => MixerSelection::Master,
@@ -316,12 +333,22 @@ impl AppState {
 
     /// Cycle output target for the selected instrument
     pub fn mixer_cycle_output(&mut self) {
+        let bus_ids: Vec<u8> = self.session.bus_ids().collect();
         if let MixerSelection::Instrument(idx) = self.session.mixer_selection {
             if let Some(inst) = self.instruments.instruments.get_mut(idx) {
                 inst.output_target = match inst.output_target {
-                    OutputTarget::Master => OutputTarget::Bus(1),
-                    OutputTarget::Bus(n) if n < MAX_BUSES as u8 => OutputTarget::Bus(n + 1),
-                    OutputTarget::Bus(_) => OutputTarget::Master,
+                    OutputTarget::Master => {
+                        // Go to first bus, or stay at Master if no buses
+                        bus_ids.first().map(|&id| OutputTarget::Bus(id)).unwrap_or(OutputTarget::Master)
+                    }
+                    OutputTarget::Bus(current_id) => {
+                        // Find next bus, or wrap to Master
+                        let pos = bus_ids.iter().position(|&id| id == current_id);
+                        match pos {
+                            Some(p) if p + 1 < bus_ids.len() => OutputTarget::Bus(bus_ids[p + 1]),
+                            _ => OutputTarget::Master,
+                        }
+                    }
                 };
             }
         }
@@ -329,12 +356,22 @@ impl AppState {
 
     /// Cycle output target backwards for the selected instrument
     pub fn mixer_cycle_output_reverse(&mut self) {
+        let bus_ids: Vec<u8> = self.session.bus_ids().collect();
         if let MixerSelection::Instrument(idx) = self.session.mixer_selection {
             if let Some(inst) = self.instruments.instruments.get_mut(idx) {
                 inst.output_target = match inst.output_target {
-                    OutputTarget::Master => OutputTarget::Bus(MAX_BUSES as u8),
-                    OutputTarget::Bus(1) => OutputTarget::Master,
-                    OutputTarget::Bus(n) => OutputTarget::Bus(n - 1),
+                    OutputTarget::Master => {
+                        // Go to last bus, or stay at Master if no buses
+                        bus_ids.last().map(|&id| OutputTarget::Bus(id)).unwrap_or(OutputTarget::Master)
+                    }
+                    OutputTarget::Bus(current_id) => {
+                        // Find previous bus, or wrap to Master
+                        let pos = bus_ids.iter().position(|&id| id == current_id);
+                        match pos {
+                            Some(0) | None => OutputTarget::Master,
+                            Some(p) => OutputTarget::Bus(bus_ids[p - 1]),
+                        }
+                    }
                 };
             }
         }
@@ -433,7 +470,8 @@ mod tests {
         assert!(matches!(state.session.mixer_selection, MixerSelection::Bus(1)));
 
         state.mixer_move(100);
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Bus(8)));
+        // Should clamp to last bus (DEFAULT_BUS_COUNT = 8)
+        assert!(matches!(state.session.mixer_selection, MixerSelection::Bus(DEFAULT_BUS_COUNT)));
     }
 
     #[test]
@@ -460,8 +498,8 @@ mod tests {
         state.mixer_cycle_output();
         assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(1));
 
-        // Cycle through all buses back to Master (Bus(1)..Bus(8)..Master = 8 more cycles)
-        for _ in 1..=MAX_BUSES {
+        // Cycle through all buses back to Master
+        for _ in 1..=DEFAULT_BUS_COUNT {
             state.mixer_cycle_output();
         }
         assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Master);
@@ -474,9 +512,9 @@ mod tests {
         state.session.mixer_selection = MixerSelection::Instrument(0);
 
         state.mixer_cycle_output_reverse();
-        assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(MAX_BUSES as u8));
+        assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(DEFAULT_BUS_COUNT));
         state.mixer_cycle_output_reverse();
-        assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(MAX_BUSES as u8 - 1));
+        assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(DEFAULT_BUS_COUNT - 1));
     }
 
     #[test]

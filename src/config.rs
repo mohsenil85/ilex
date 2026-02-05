@@ -23,6 +23,7 @@ struct DefaultsConfig {
     time_signature: Option<[u8; 2]>,
     snap: Option<bool>,
     keyboard_layout: Option<String>,
+    bus_count: Option<u8>,
 }
 
 pub struct Config {
@@ -57,6 +58,12 @@ impl Config {
             .as_deref()
             .and_then(parse_keyboard_layout)
             .unwrap_or_default()
+    }
+
+    /// Get the default number of mixing buses for new projects
+    pub fn default_bus_count(&self) -> u8 {
+        use crate::state::session::DEFAULT_BUS_COUNT;
+        self.defaults.bus_count.unwrap_or(DEFAULT_BUS_COUNT)
     }
 
     pub fn defaults(&self) -> MusicalSettings {
@@ -111,6 +118,9 @@ fn merge_defaults(base: &mut DefaultsConfig, user: DefaultsConfig) {
     }
     if user.keyboard_layout.is_some() {
         base.keyboard_layout = user.keyboard_layout;
+    }
+    if user.bus_count.is_some() {
+        base.bus_count = user.bus_count;
     }
 }
 

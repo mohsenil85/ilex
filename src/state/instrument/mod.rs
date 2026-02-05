@@ -18,12 +18,10 @@ use super::sampler::SamplerConfig;
 
 pub type InstrumentId = u32;
 
-pub const MAX_BUSES: usize = 8;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OutputTarget {
     Master,
-    Bus(u8), // 1-8
+    Bus(u8),
 }
 
 impl Default for OutputTarget {
@@ -233,7 +231,8 @@ pub struct Instrument {
 
 impl Instrument {
     pub fn new(id: InstrumentId, source: SourceType) -> Self {
-        let sends = (1..=MAX_BUSES as u8).map(MixerSend::new).collect();
+        // Sends are initialized empty; call sync_sends_with_buses() after creation
+        let sends = Vec::new();
         // Sample instruments get a sampler config
         let sampler_config = if source.is_sample() {
             Some(SamplerConfig::default())
@@ -324,6 +323,24 @@ impl Instrument {
     /// Recalculate next_effect_id from existing effects (used after loading)
     pub fn recalculate_next_effect_id(&mut self) {
         self.next_effect_id = self.effects.iter().map(|e| e.id).max().map_or(0, |m| m + 1);
+    }
+
+    /// Sync sends with current bus IDs. Adds missing sends, keeps existing ones.
+    pub fn sync_sends_with_buses(&mut self, bus_ids: &[u8]) {
+        for &bus_id in bus_ids {
+            if !self.sends.iter().any(|s| s.bus_id == bus_id) {
+                self.sends.push(MixerSend::new(bus_id));
+            }
+        }
+        // Sort sends by bus_id for consistent ordering
+        self.sends.sort_by_key(|s| s.bus_id);
+    }
+
+    /// Disable sends for a removed bus (keeps the entry for undo support)
+    pub fn disable_send_for_bus(&mut self, bus_id: u8) {
+        if let Some(send) = self.sends.iter_mut().find(|s| s.bus_id == bus_id) {
+            send.enabled = false;
+        }
     }
 
     // --- Structure navigation convenience methods ---
