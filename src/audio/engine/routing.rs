@@ -2,7 +2,7 @@ use super::AudioEngine;
 use super::{InstrumentNodes, GROUP_SOURCES, GROUP_PROCESSING, GROUP_OUTPUT, VST_UGEN_INDEX};
 use super::backend::RawArg;
 use std::collections::HashMap;
-use crate::state::{CustomSynthDefRegistry, EffectId, EffectType, FilterType, Instrument, InstrumentId, InstrumentState, LfoTarget, ParamValue, SessionState, SourceType};
+use crate::state::{CustomSynthDefRegistry, EffectId, EffectType, FilterType, Instrument, InstrumentId, InstrumentState, LfoTarget, ParamValue, SessionState, SourceType, SourceTypeExt};
 
 impl AudioEngine {
     pub(super) fn source_synth_def(source: SourceType, registry: &CustomSynthDefRegistry) -> String {

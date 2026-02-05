@@ -8,44 +8,9 @@ use super::instrument::MixerBus;
 use super::vst_plugin::VstPluginRegistry;
 use serde::{Serialize, Deserialize};
 
-pub const MAX_BUSES: usize = 8;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum MixerSelection {
-    Instrument(usize), // index into instruments vec
-    Bus(u8),      // 1-8
-    Master,
-}
-
-impl Default for MixerSelection {
-    fn default() -> Self {
-        Self::Instrument(0)
-    }
-}
-
-/// The subset of session fields that are cheap to clone for editing (BPM, key, scale, etc.)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MusicalSettings {
-    pub key: Key,
-    pub scale: Scale,
-    pub bpm: u16,
-    pub tuning_a4: f32,
-    pub snap: bool,
-    pub time_signature: (u8, u8),
-}
-
-impl Default for MusicalSettings {
-    fn default() -> Self {
-        Self {
-            key: Key::C,
-            scale: Scale::Major,
-            bpm: 120,
-            tuning_a4: 440.0,
-            snap: false,
-            time_signature: (4, 4),
-        }
-    }
-}
+// Re-export types from imbolc-types
+pub use imbolc_types::{MixerSelection, MusicalSettings};
+pub use imbolc_types::MAX_BUSES;
 
 /// Project-level state container.
 /// Owns musical settings, piano roll, automation, mixer buses, and other project data.

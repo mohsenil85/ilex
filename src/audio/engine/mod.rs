@@ -42,14 +42,7 @@ pub const WAVETABLE_NUM_TABLES: i32 = 8;
 /// not to live/manual triggers.
 pub const SCHEDULE_LOOKAHEAD_SECS: f64 = 0.015;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ServerStatus {
-    Stopped,
-    Starting,
-    Running,
-    Connected,
-    Error,
-}
+pub use imbolc_types::ServerStatus;
 
 /// VSTPlugin UGen index within wrapper SynthDefs (imbolc_vst_instrument, imbolc_vst_effect).
 /// This is 0 because VSTPlugin is the first (and only) UGen in our wrappers.
