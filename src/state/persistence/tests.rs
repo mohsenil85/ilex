@@ -17,7 +17,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        path.push(format!("ilex_persistence_test_{}.sqlite", nanos));
+        path.push(format!("imbolc_persistence_test_{}.sqlite", nanos));
         path
     }
 

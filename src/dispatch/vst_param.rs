@@ -17,7 +17,7 @@ fn vst_state_path(instrument_id: u32, plugin_name: &str) -> PathBuf {
         .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
         .collect();
     config_dir
-        .join("ilex")
+        .join("imbolc")
         .join("vst_states")
         .join(format!("instrument_{}_{}.fxp", instrument_id, sanitized))
 }
@@ -30,7 +30,7 @@ fn vst_effect_state_path(instrument_id: u32, effect_id: u32, plugin_name: &str) 
         .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
         .collect();
     config_dir
-        .join("ilex")
+        .join("imbolc")
         .join("vst_states")
         .join(format!("instrument_{}_fx_{}_{}.fxp", instrument_id, effect_id, sanitized))
 }

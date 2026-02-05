@@ -1,9 +1,26 @@
 use std::collections::{HashMap, VecDeque};
 use std::net::UdpSocket;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use rosc::{OscBundle, OscMessage, OscPacket, OscTime, OscType};
+
+use super::triple_buffer::TripleBufferHandle;
+
+/// Pack two f32 values into a single u64 for atomic storage
+fn pack_f32_pair(a: f32, b: f32) -> u64 {
+    let a_bits = a.to_bits() as u64;
+    let b_bits = b.to_bits() as u64;
+    (a_bits << 32) | b_bits
+}
+
+/// Unpack two f32 values from a u64
+fn unpack_f32_pair(packed: u64) -> (f32, f32) {
+    let a = f32::from_bits((packed >> 32) as u32);
+    let b = f32::from_bits(packed as u32);
+    (a, b)
+}
 
 /// Maximum number of waveform samples to keep per audio input instrument
 const WAVEFORM_BUFFER_SIZE: usize = 100;
@@ -20,87 +37,92 @@ pub struct VstParamReply {
 }
 
 /// Shared meter + waveform + visualization data accessible from both threads.
-#[derive(Clone, Default)]
+///
+/// Scalar fields use atomics for lock-free reads (reduces jitter from UI thread contention).
+/// Complex fields use triple-buffers for lock-free access without blocking the OSC thread.
+#[derive(Clone)]
 pub struct AudioMonitor {
-    meter_data: Arc<RwLock<(f32, f32)>>,
-    audio_in_waveforms: Arc<RwLock<HashMap<u32, VecDeque<f32>>>>,
-    /// 7-band spectrum data
-    spectrum_data: Arc<RwLock<[f32; 7]>>,
-    /// LUFS data: (peak_l, peak_r, rms_l, rms_r)
-    lufs_data: Arc<RwLock<(f32, f32, f32, f32)>>,
-    /// Oscilloscope ring buffer
-    scope_buffer: Arc<RwLock<VecDeque<f32>>>,
-    /// SuperCollider average CPU load from /status.reply
-    sc_cpu: Arc<RwLock<f32>>,
-    /// OSC round-trip latency in milliseconds
-    osc_latency_ms: Arc<RwLock<f32>>,
+    /// Meter peaks (l, r) packed as u64 for atomic access
+    meter_data: Arc<AtomicU64>,
+    /// Per-instrument audio input waveforms (lock-free triple buffer)
+    audio_in_waveforms: TripleBufferHandle<HashMap<u32, VecDeque<f32>>>,
+    /// 7-band spectrum data (lock-free triple buffer)
+    spectrum_data: TripleBufferHandle<[f32; 7]>,
+    /// LUFS data: (peak_l, peak_r, rms_l, rms_r) (lock-free triple buffer)
+    lufs_data: TripleBufferHandle<(f32, f32, f32, f32)>,
+    /// Oscilloscope ring buffer (lock-free triple buffer)
+    scope_buffer: TripleBufferHandle<VecDeque<f32>>,
+    /// SuperCollider average CPU load from /status.reply (atomic f32 as u32 bits)
+    sc_cpu: Arc<AtomicU32>,
+    /// OSC round-trip latency in milliseconds (atomic f32 as u32 bits)
+    osc_latency_ms: Arc<AtomicU32>,
     /// Timestamp when /status was last sent (for latency measurement)
     status_sent_at: Arc<RwLock<Option<Instant>>>,
-    /// VST param query replies: nodeID → Vec<VstParamReply>
-    vst_params: Arc<RwLock<HashMap<i32, Vec<VstParamReply>>>>,
+    /// VST param query replies: nodeID → Vec<VstParamReply> (lock-free triple buffer)
+    vst_params: TripleBufferHandle<HashMap<i32, Vec<VstParamReply>>>,
+}
+
+impl Default for AudioMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl AudioMonitor {
     pub fn new() -> Self {
+        let mut scope = VecDeque::with_capacity(SCOPE_BUFFER_SIZE);
+        scope.resize(SCOPE_BUFFER_SIZE, 0.0);
         Self {
-            meter_data: Arc::new(RwLock::new((0.0_f32, 0.0_f32))),
-            audio_in_waveforms: Arc::new(RwLock::new(HashMap::new())),
-            spectrum_data: Arc::new(RwLock::new([0.0; 7])),
-            lufs_data: Arc::new(RwLock::new((0.0, 0.0, 0.0, 0.0))),
-            scope_buffer: Arc::new(RwLock::new(VecDeque::with_capacity(SCOPE_BUFFER_SIZE))),
-            sc_cpu: Arc::new(RwLock::new(0.0)),
-            osc_latency_ms: Arc::new(RwLock::new(0.0)),
+            meter_data: Arc::new(AtomicU64::new(pack_f32_pair(0.0, 0.0))),
+            audio_in_waveforms: TripleBufferHandle::new(),
+            spectrum_data: TripleBufferHandle::new_with([0.0; 7]),
+            lufs_data: TripleBufferHandle::new_with((0.0, 0.0, 0.0, 0.0)),
+            scope_buffer: TripleBufferHandle::new_with(scope),
+            sc_cpu: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
+            osc_latency_ms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             status_sent_at: Arc::new(RwLock::new(None)),
-            vst_params: Arc::new(RwLock::new(HashMap::new())),
+            vst_params: TripleBufferHandle::new(),
         }
     }
 
+    /// Get meter peaks (lock-free atomic read)
     pub fn meter_peak(&self) -> (f32, f32) {
-        self.meter_data
-            .read()
-            .map(|data| *data)
-            .unwrap_or((0.0, 0.0))
+        unpack_f32_pair(self.meter_data.load(Ordering::Relaxed))
     }
 
+    /// Get audio input waveform for an instrument (lock-free triple buffer read)
     pub fn audio_in_waveform(&self, instrument_id: u32) -> Vec<f32> {
-        self.audio_in_waveforms
-            .read()
-            .map(|waveforms| {
-                waveforms
-                    .get(&instrument_id)
-                    .map(|buffer| buffer.iter().copied().collect())
-                    .unwrap_or_default()
-            })
-            .unwrap_or_default()
+        self.audio_in_waveforms.with(|waveforms| {
+            waveforms
+                .get(&instrument_id)
+                .map(|buffer| buffer.iter().copied().collect())
+                .unwrap_or_default()
+        })
     }
 
+    /// Get 7-band spectrum data (lock-free triple buffer read)
     pub fn spectrum_bands(&self) -> [f32; 7] {
-        self.spectrum_data
-            .read()
-            .map(|data| *data)
-            .unwrap_or([0.0; 7])
+        self.spectrum_data.read()
     }
 
+    /// Get LUFS data (lock-free triple buffer read)
     pub fn lufs_data(&self) -> (f32, f32, f32, f32) {
-        self.lufs_data
-            .read()
-            .map(|data| *data)
-            .unwrap_or((0.0, 0.0, 0.0, 0.0))
+        self.lufs_data.read()
     }
 
+    /// Get oscilloscope buffer (lock-free triple buffer read)
     pub fn scope_buffer(&self) -> Vec<f32> {
-        self.scope_buffer
-            .read()
-            .map(|buf| buf.iter().copied().collect())
-            .unwrap_or_default()
+        self.scope_buffer.with(|buf| buf.iter().copied().collect())
     }
 
+    /// Get SuperCollider CPU load (lock-free atomic read)
     pub fn sc_cpu(&self) -> f32 {
-        self.sc_cpu.read().map(|v| *v).unwrap_or(0.0)
+        f32::from_bits(self.sc_cpu.load(Ordering::Relaxed))
     }
 
+    /// Get OSC round-trip latency in ms (lock-free atomic read)
     pub fn osc_latency_ms(&self) -> f32 {
-        self.osc_latency_ms.read().map(|v| *v).unwrap_or(0.0)
+        f32::from_bits(self.osc_latency_ms.load(Ordering::Relaxed))
     }
 
     /// Mark the time /status was sent, for latency measurement
@@ -111,65 +133,65 @@ impl AudioMonitor {
     }
 
     /// Take accumulated VST param replies for a node (clears the entry)
+    /// Note: Uses modify which writes to the back buffer, so this needs to be called from
+    /// the writer thread (OSC receive thread) or coordinated appropriately.
     pub fn take_vst_params(&self, node_id: i32) -> Option<Vec<VstParamReply>> {
-        if let Ok(mut map) = self.vst_params.write() {
-            map.remove(&node_id)
-        } else {
-            None
+        // First read the current value
+        let result = self.vst_params.with(|map| map.get(&node_id).cloned());
+        // Then clear it if it existed
+        if result.is_some() {
+            self.vst_params.modify(|map| {
+                map.remove(&node_id);
+            });
         }
+        result
     }
 
     /// Clear VST param replies for a node (before starting a new query)
     pub fn clear_vst_params(&self, node_id: i32) {
-        if let Ok(mut map) = self.vst_params.write() {
+        self.vst_params.modify(|map| {
             map.remove(&node_id);
-        }
+        });
     }
 
     /// Check if any VST param replies have accumulated for a node
     pub fn has_vst_params(&self, node_id: i32) -> bool {
-        self.vst_params
-            .read()
-            .map(|map| map.contains_key(&node_id))
-            .unwrap_or(false)
+        self.vst_params.with(|map| map.contains_key(&node_id))
     }
 
     /// Get the count of accumulated VST param replies for a node
     pub fn vst_param_count(&self, node_id: i32) -> usize {
-        self.vst_params
-            .read()
-            .map(|map| map.get(&node_id).map(|v| v.len()).unwrap_or(0))
-            .unwrap_or(0)
+        self.vst_params.with(|map| map.get(&node_id).map(|v| v.len()).unwrap_or(0))
     }
 }
 
 pub struct OscClient {
     socket: UdpSocket,
     server_addr: String,
-    meter_data: Arc<RwLock<(f32, f32)>>,
+    meter_data: Arc<AtomicU64>,
     /// Waveform data per audio input instrument: instrument_id -> ring buffer of peak values
-    audio_in_waveforms: Arc<RwLock<HashMap<u32, VecDeque<f32>>>>,
-    spectrum_data: Arc<RwLock<[f32; 7]>>,
-    lufs_data: Arc<RwLock<(f32, f32, f32, f32)>>,
-    scope_buffer: Arc<RwLock<VecDeque<f32>>>,
-    sc_cpu: Arc<RwLock<f32>>,
-    osc_latency_ms: Arc<RwLock<f32>>,
+    audio_in_waveforms: TripleBufferHandle<HashMap<u32, VecDeque<f32>>>,
+    spectrum_data: TripleBufferHandle<[f32; 7]>,
+    lufs_data: TripleBufferHandle<(f32, f32, f32, f32)>,
+    scope_buffer: TripleBufferHandle<VecDeque<f32>>,
+    sc_cpu: Arc<AtomicU32>,
+    osc_latency_ms: Arc<AtomicU32>,
     status_sent_at: Arc<RwLock<Option<Instant>>>,
-    vst_params: Arc<RwLock<HashMap<i32, Vec<VstParamReply>>>>,
+    vst_params: TripleBufferHandle<HashMap<i32, Vec<VstParamReply>>>,
     _recv_thread: Option<JoinHandle<()>>,
 }
 
 /// Recursively process an OSC packet (handles bundles wrapping messages)
 struct OscRefs {
-    meter: Arc<RwLock<(f32, f32)>>,
-    waveforms: Arc<RwLock<HashMap<u32, VecDeque<f32>>>>,
-    spectrum: Arc<RwLock<[f32; 7]>>,
-    lufs: Arc<RwLock<(f32, f32, f32, f32)>>,
-    scope: Arc<RwLock<VecDeque<f32>>>,
-    sc_cpu: Arc<RwLock<f32>>,
-    osc_latency_ms: Arc<RwLock<f32>>,
+    meter: Arc<AtomicU64>,
+    waveforms: TripleBufferHandle<HashMap<u32, VecDeque<f32>>>,
+    spectrum: TripleBufferHandle<[f32; 7]>,
+    lufs: TripleBufferHandle<(f32, f32, f32, f32)>,
+    scope: TripleBufferHandle<VecDeque<f32>>,
+    sc_cpu: Arc<AtomicU32>,
+    osc_latency_ms: Arc<AtomicU32>,
     status_sent_at: Arc<RwLock<Option<Instant>>>,
-    vst_params: Arc<RwLock<HashMap<i32, Vec<VstParamReply>>>>,
+    vst_params: TripleBufferHandle<HashMap<i32, Vec<VstParamReply>>>,
 }
 
 fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
@@ -184,9 +206,7 @@ fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
                     Some(OscType::Float(v)) => *v,
                     _ => 0.0,
                 };
-                if let Ok(mut data) = refs.meter.write() {
-                    *data = (peak_l, peak_r);
-                }
+                refs.meter.store(pack_f32_pair(peak_l, peak_r), Ordering::Relaxed);
             } else if msg.addr == "/audio_in_level" && msg.args.len() >= 4 {
                 // SendPeakRMS format: /audio_in_level nodeID replyID peakL rmsL peakR rmsR
                 let instrument_id = match msg.args.get(1) {
@@ -198,13 +218,13 @@ fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
                     Some(OscType::Float(v)) => *v,
                     _ => 0.0,
                 };
-                if let Ok(mut waveforms) = refs.waveforms.write() {
+                refs.waveforms.modify(|waveforms| {
                     let buffer = waveforms.entry(instrument_id).or_insert_with(VecDeque::new);
                     buffer.push_back(peak);
                     while buffer.len() > WAVEFORM_BUFFER_SIZE {
                         buffer.pop_front();
                     }
-                }
+                });
             } else if msg.addr == "/spectrum" && msg.args.len() >= 9 {
                 // SendReply format: /spectrum nodeID replyID val0 val1 ... val6
                 let mut bands = [0.0_f32; 7];
@@ -214,9 +234,7 @@ fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
                         _ => 0.0,
                     };
                 }
-                if let Ok(mut data) = refs.spectrum.write() {
-                    *data = bands;
-                }
+                refs.spectrum.write(bands);
             } else if msg.addr == "/lufs" && msg.args.len() >= 6 {
                 // SendPeakRMS format: /lufs nodeID replyID peakL rmsL peakR rmsR
                 let peak_l = match msg.args.get(2) {
@@ -235,37 +253,31 @@ fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
                     Some(OscType::Float(v)) => *v,
                     _ => 0.0,
                 };
-                if let Ok(mut data) = refs.lufs.write() {
-                    *data = (peak_l, peak_r, rms_l, rms_r);
-                }
+                refs.lufs.write((peak_l, peak_r, rms_l, rms_r));
             } else if msg.addr == "/scope" && msg.args.len() >= 3 {
                 // SendReply format: /scope nodeID replyID peakValue
                 let peak = match msg.args.get(2) {
                     Some(OscType::Float(v)) => *v,
                     _ => 0.0,
                 };
-                if let Ok(mut buf) = refs.scope.write() {
+                refs.scope.modify(|buf| {
                     buf.push_back(peak);
                     while buf.len() > SCOPE_BUFFER_SIZE {
                         buf.pop_front();
                     }
-                }
+                });
             } else if msg.addr == "/status.reply" && msg.args.len() >= 6 {
                 // /status.reply: [unused, ugens, synths, groups, synthdefs, avg_cpu, peak_cpu]
                 let avg_cpu = match msg.args.get(5) {
                     Some(OscType::Float(v)) => *v,
                     _ => 0.0,
                 };
-                if let Ok(mut cpu) = refs.sc_cpu.write() {
-                    *cpu = avg_cpu;
-                }
+                refs.sc_cpu.store(avg_cpu.to_bits(), Ordering::Relaxed);
                 // Calculate round-trip latency from when /status was sent
                 if let Ok(mut ts) = refs.status_sent_at.write() {
                     if let Some(sent) = ts.take() {
                         let latency = sent.elapsed().as_secs_f32() * 1000.0;
-                        if let Ok(mut lat) = refs.osc_latency_ms.write() {
-                            *lat = latency;
-                        }
+                        refs.osc_latency_ms.store(latency.to_bits(), Ordering::Relaxed);
                     }
                 }
             } else if msg.addr == "/vst_param" && msg.args.len() >= 5 {
@@ -300,13 +312,13 @@ fn handle_osc_packet(packet: &OscPacket, refs: &OscRefs) {
                         }
                     })
                     .collect();
-                if let Ok(mut map) = refs.vst_params.write() {
+                refs.vst_params.modify(|map| {
                     map.entry(node_id).or_default().push(VstParamReply {
                         index,
                         value,
                         display,
                     });
-                }
+                });
             }
         }
         OscPacket::Bundle(bundle) => {
@@ -326,28 +338,28 @@ impl OscClient {
     pub fn new_with_monitor(server_addr: &str, monitor: AudioMonitor) -> std::io::Result<Self> {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         let meter_data = Arc::clone(&monitor.meter_data);
-        let audio_in_waveforms = Arc::clone(&monitor.audio_in_waveforms);
-        let spectrum_data = Arc::clone(&monitor.spectrum_data);
-        let lufs_data = Arc::clone(&monitor.lufs_data);
-        let scope_buffer = Arc::clone(&monitor.scope_buffer);
+        let audio_in_waveforms = monitor.audio_in_waveforms.clone();
+        let spectrum_data = monitor.spectrum_data.clone();
+        let lufs_data = monitor.lufs_data.clone();
+        let scope_buffer = monitor.scope_buffer.clone();
         let sc_cpu = Arc::clone(&monitor.sc_cpu);
         let osc_latency_ms = Arc::clone(&monitor.osc_latency_ms);
         let status_sent_at = Arc::clone(&monitor.status_sent_at);
-        let vst_params = Arc::clone(&monitor.vst_params);
+        let vst_params = monitor.vst_params.clone();
 
         // Clone socket for receive thread
         let recv_socket = socket.try_clone()?;
         recv_socket.set_read_timeout(Some(Duration::from_millis(50)))?;
         let refs = OscRefs {
             meter: Arc::clone(&meter_data),
-            waveforms: Arc::clone(&audio_in_waveforms),
-            spectrum: Arc::clone(&spectrum_data),
-            lufs: Arc::clone(&lufs_data),
-            scope: Arc::clone(&scope_buffer),
+            waveforms: audio_in_waveforms.clone(),
+            spectrum: spectrum_data.clone(),
+            lufs: lufs_data.clone(),
+            scope: scope_buffer.clone(),
             sc_cpu: Arc::clone(&sc_cpu),
             osc_latency_ms: Arc::clone(&osc_latency_ms),
             status_sent_at: Arc::clone(&status_sent_at),
-            vst_params: Arc::clone(&vst_params),
+            vst_params: vst_params.clone(),
         };
 
         let handle = thread::spawn(move || {
@@ -385,28 +397,29 @@ impl OscClient {
     pub fn monitor(&self) -> AudioMonitor {
         AudioMonitor {
             meter_data: Arc::clone(&self.meter_data),
-            audio_in_waveforms: Arc::clone(&self.audio_in_waveforms),
-            spectrum_data: Arc::clone(&self.spectrum_data),
-            lufs_data: Arc::clone(&self.lufs_data),
-            scope_buffer: Arc::clone(&self.scope_buffer),
+            audio_in_waveforms: self.audio_in_waveforms.clone(),
+            spectrum_data: self.spectrum_data.clone(),
+            lufs_data: self.lufs_data.clone(),
+            scope_buffer: self.scope_buffer.clone(),
             sc_cpu: Arc::clone(&self.sc_cpu),
             osc_latency_ms: Arc::clone(&self.osc_latency_ms),
             status_sent_at: Arc::clone(&self.status_sent_at),
-            vst_params: Arc::clone(&self.vst_params),
+            vst_params: self.vst_params.clone(),
         }
     }
 
-    /// Get current peak levels (left, right) from the meter synth
+    /// Get current peak levels (left, right) from the meter synth (lock-free atomic read)
     pub fn meter_peak(&self) -> (f32, f32) {
-        self.meter_data.read().map(|d| *d).unwrap_or((0.0, 0.0))
+        unpack_f32_pair(self.meter_data.load(Ordering::Relaxed))
     }
 
     /// Get waveform data for an audio input instrument (returns a copy of the buffer)
     pub fn audio_in_waveform(&self, instrument_id: u32) -> Vec<f32> {
-        self.audio_in_waveforms
-            .read()
-            .map(|w| w.get(&instrument_id).map(|d| d.iter().copied().collect()).unwrap_or_default())
-            .unwrap_or_default()
+        self.audio_in_waveforms.with(|w| {
+            w.get(&instrument_id)
+                .map(|d| d.iter().copied().collect())
+                .unwrap_or_default()
+        })
     }
 
     pub fn send_message(&self, addr: &str, args: Vec<OscType>) -> std::io::Result<()> {

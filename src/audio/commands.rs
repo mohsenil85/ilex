@@ -219,6 +219,40 @@ pub enum AudioCmd {
     Shutdown,
 }
 
+impl AudioCmd {
+    /// Returns true if this command is time-critical and should use the priority channel.
+    /// Priority commands: voice management, param changes, playback control.
+    /// Normal commands: state sync, routing rebuilds, recording, server lifecycle.
+    pub fn is_priority(&self) -> bool {
+        matches!(
+            self,
+            // Voice management (most time-critical)
+            AudioCmd::SpawnVoice { .. }
+                | AudioCmd::ReleaseVoice { .. }
+                | AudioCmd::PlayDrumHit { .. }
+                | AudioCmd::RegisterActiveNote { .. }
+                | AudioCmd::ClearActiveNotes
+                | AudioCmd::ReleaseAllVoices
+                // Param changes (need low latency for knob tweaks)
+                | AudioCmd::SetSourceParam { .. }
+                | AudioCmd::SetEqParam { .. }
+                | AudioCmd::SetFilterParam { .. }
+                | AudioCmd::SetEffectParam { .. }
+                | AudioCmd::SetLfoParam { .. }
+                | AudioCmd::SetVstParam { .. }
+                | AudioCmd::SetInstrumentMixerParams { .. }
+                | AudioCmd::SetMasterParams { .. }
+                | AudioCmd::SetBusMixerParams { .. }
+                // Playback control
+                | AudioCmd::SetPlaying { .. }
+                | AudioCmd::SetBpm { .. }
+                | AudioCmd::ResetPlayhead
+                // Automation (applied during playback)
+                | AudioCmd::ApplyAutomation { .. }
+        )
+    }
+}
+
 /// Feedback sent from the audio thread back to the main thread.
 ///
 /// In Phase 3 these are received via mpsc::Receiver and polled each frame.

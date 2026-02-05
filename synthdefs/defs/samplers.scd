@@ -3,7 +3,7 @@
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // Sampler - Plays from buffer with variable rate (for scratching)
-SynthDef(\ilex_sampler, { |out=1024, bufnum=0, sliceStart=0, sliceEnd=1,
+SynthDef(\imbolc_sampler, { |out=1024, bufnum=0, sliceStart=0, sliceEnd=1,
                              rate=1.0, rate_in=(-1), amp=0.8, loop=0,
                              freq_in=(-1), gate_in=(-1), vel_in=(-1),
                              attack=0.001, decay=0.1, sustain=1.0, release=0.05,
@@ -47,7 +47,7 @@ SynthDef(\ilex_sampler, { |out=1024, bufnum=0, sliceStart=0, sliceEnd=1,
 }).writeDefFile(dir);
 
 // Sampler one-shot (for triggering slices without MIDI control)
-SynthDef(\ilex_sampler_oneshot, { |out=1024, bufnum=0, sliceStart=0, sliceEnd=1,
+SynthDef(\imbolc_sampler_oneshot, { |out=1024, bufnum=0, sliceStart=0, sliceEnd=1,
                                       rate=1.0, amp=0.8, gate=1|
     var numFrames = BufFrames.kr(bufnum);
     var startFrame = sliceStart * numFrames;

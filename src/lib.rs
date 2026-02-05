@@ -1,16 +1,16 @@
-//! # ilex
+//! # imbolc-core
 //!
-//! Backend library for the Ilex DAW. Provides state management, action dispatch,
+//! Backend library for the Imbolc DAW. Provides state management, action dispatch,
 //! audio engine integration, and persistence — independent of any UI framework.
 //!
 //! ## Quick Start
 //!
 //! ```rust,ignore
-//! use ilex::state::AppState;
-//! use ilex::config::Config;
-//! use ilex::audio::AudioHandle;
-//! use ilex::dispatch::dispatch_action;
-//! use ilex::action::{Action, IoFeedback};
+//! use imbolc_core::state::AppState;
+//! use imbolc_core::config::Config;
+//! use imbolc_core::audio::AudioHandle;
+//! use imbolc_core::dispatch::dispatch_action;
+//! use imbolc_core::action::{Action, IoFeedback};
 //!
 //! // 1. Create state with musical defaults from config
 //! let config = Config::load();

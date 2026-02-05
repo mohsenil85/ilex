@@ -3,7 +3,7 @@
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // FM — 2-operator FM synthesis (DX7 style)
-SynthDef(\ilex_fm, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, ratio=2.0, index=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), index_mod_in=(-1)|
+SynthDef(\imbolc_fm, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, ratio=2.0, index=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), index_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -30,7 +30,7 @@ SynthDef(\ilex_fm, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=44
 }).writeDefFile(dir);
 
 // PhaseMod — Phase distortion synthesis (Casio CZ style)
-SynthDef(\ilex_phasemod, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, ratio=2.0, index=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), index_mod_in=(-1)|
+SynthDef(\imbolc_phasemod, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, ratio=2.0, index=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), index_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -56,7 +56,7 @@ SynthDef(\ilex_phasemod, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), f
 }).writeDefFile(dir);
 
 // Pluck — Karplus-Strong string synthesis
-SynthDef(\ilex_pluck, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, decay=2.0, coef=0.3, attack=0.01, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\imbolc_pluck, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, decay=2.0, coef=0.3, attack=0.01, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -80,7 +80,7 @@ SynthDef(\ilex_pluck, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq
 }).writeDefFile(dir);
 
 // Formant — Vocal formant synthesis
-SynthDef(\ilex_formant, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, formant=800, bw=200, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), formant_mod_in=(-1)|
+SynthDef(\imbolc_formant, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, formant=800, bw=200, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), formant_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -105,7 +105,7 @@ SynthDef(\ilex_formant, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), fr
 }).writeDefFile(dir);
 
 // Gendy — Xenakis dynamic stochastic synthesis
-SynthDef(\ilex_gendy, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, ampdist=1, durdist=1, minfreq=100, maxfreq=1000, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\imbolc_gendy, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, ampdist=1, durdist=1, minfreq=100, maxfreq=1000, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
     var ampMod = Select.kr(amp_mod_in >= 0, [0, In.kr(amp_mod_in)]);
@@ -124,7 +124,7 @@ SynthDef(\ilex_gendy, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=
 }).writeDefFile(dir);
 
 // Chaos — Chaotic attractor oscillators (Henon/Lorenz)
-SynthDef(\ilex_chaos, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, model=0, chaos_freq=8000, chaos_param=1.3, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), chaos_param_mod_in=(-1)|
+SynthDef(\imbolc_chaos, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=0.5, lag=0.02, model=0, chaos_freq=8000, chaos_param=1.3, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), chaos_param_mod_in=(-1)|
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
     var ampMod = Select.kr(amp_mod_in >= 0, [0, In.kr(amp_mod_in)]);
@@ -147,7 +147,7 @@ SynthDef(\ilex_chaos, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), amp=
 }).writeDefFile(dir);
 
 // Additive — Harmonic series synthesis
-SynthDef(\ilex_additive, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, harmonics=8, rolloff=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), rolloff_mod_in=(-1)|
+SynthDef(\imbolc_additive, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, harmonics=8, rolloff=1.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), rolloff_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -178,7 +178,7 @@ SynthDef(\ilex_additive, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), f
 }).writeDefFile(dir);
 
 // Wavetable — Morphing wavetable oscillator using VOsc
-SynthDef(\ilex_wavetable, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, position=0.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), position_mod_in=(-1)|
+SynthDef(\imbolc_wavetable, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, position=0.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), position_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -206,7 +206,7 @@ SynthDef(\ilex_wavetable, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), 
 }).writeDefFile(dir);
 
 // Granular — Pitched granular synthesis using GrainSin (no buffer needed)
-SynthDef(\ilex_granular, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
+SynthDef(\imbolc_granular, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1),
     freq=440, amp=0.5, lag=0.02, grain_size=0.05, density=20, spread=0, pitch_rnd=0,
     attack=0.01, decay=0.1, sustain=0.7, release=0.3,
     amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1),

@@ -68,7 +68,7 @@ impl AudioEngine {
         self.next_node_id += 1;
         {
             let mut args: Vec<RawArg> = vec![
-                RawArg::Str("ilex_midi".to_string()),
+                RawArg::Str("imbolc_midi".to_string()),
                 RawArg::Int(midi_node_id),
                 RawArg::Int(1), // addToTail
                 RawArg::Int(group_id),
@@ -311,7 +311,7 @@ impl AudioEngine {
         self.next_node_id += 1;
         {
             let mut args: Vec<RawArg> = vec![
-                RawArg::Str("ilex_midi".to_string()),
+                RawArg::Str("imbolc_midi".to_string()),
                 RawArg::Int(midi_node_id),
                 RawArg::Int(1), // addToTail
                 RawArg::Int(group_id),
@@ -340,7 +340,7 @@ impl AudioEngine {
         self.next_node_id += 1;
         {
             let mut args: Vec<RawArg> = vec![
-                RawArg::Str("ilex_sampler".to_string()),
+                RawArg::Str("imbolc_sampler".to_string()),
                 RawArg::Int(sampler_node_id),
                 RawArg::Int(1),
                 RawArg::Int(group_id),
@@ -609,7 +609,7 @@ impl AudioEngine {
         let msg = BackendMessage {
             addr: "/s_new".to_string(),
             args: vec![
-                RawArg::Str("ilex_sampler_oneshot".to_string()),
+                RawArg::Str("imbolc_sampler_oneshot".to_string()),
                 RawArg::Int(node_id),
                 RawArg::Int(0), // addToHead
                 RawArg::Int(GROUP_SOURCES),

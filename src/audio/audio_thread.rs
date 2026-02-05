@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::{Receiver, TryRecvError};
 
 use super::commands::{AudioCmd, AudioFeedback, ExportKind};
 use super::engine::AudioEngine;
@@ -46,7 +48,10 @@ struct PendingVstQuery {
 
 pub(crate) struct AudioThread {
     engine: AudioEngine,
-    cmd_rx: Receiver<AudioCmd>,
+    /// Priority commands: voice spawn/release, param changes (time-critical)
+    priority_rx: Receiver<AudioCmd>,
+    /// Normal commands: state sync, routing rebuilds, recording control
+    normal_rx: Receiver<AudioCmd>,
     feedback_tx: Sender<AudioFeedback>,
     monitor: AudioMonitor,
     instruments: InstrumentSnapshot,
@@ -79,13 +84,15 @@ pub(crate) struct AudioThread {
 
 impl AudioThread {
     pub(crate) fn new(
-        cmd_rx: Receiver<AudioCmd>,
+        priority_rx: Receiver<AudioCmd>,
+        normal_rx: Receiver<AudioCmd>,
         feedback_tx: Sender<AudioFeedback>,
         monitor: AudioMonitor,
     ) -> Self {
         Self {
             engine: AudioEngine::new(),
-            cmd_rx,
+            priority_rx,
+            normal_rx,
             feedback_tx,
             monitor,
             instruments: InstrumentState::new(),
@@ -109,24 +116,48 @@ impl AudioThread {
     }
 
     pub(crate) fn run(mut self) {
-        const TICK_INTERVAL: Duration = Duration::from_millis(1);
+        // 0.5ms tick interval for reduced jitter (was 1ms)
+        const TICK_INTERVAL: Duration = Duration::from_micros(500);
 
         loop {
-            // Block until a command arrives OR the tick interval elapses.
-            // This avoids busy-waiting while still responding immediately to commands.
+            // Use crossbeam select to prioritize time-critical commands.
+            // Priority channel is always checked first before normal channel.
             let remaining = TICK_INTERVAL.saturating_sub(self.last_tick.elapsed());
-            match self.cmd_rx.recv_timeout(remaining) {
-                Ok(cmd) => {
-                    if self.handle_cmd(cmd) {
-                        break;
-                    }
-                    // Drain any additional queued commands
-                    if self.drain_remaining_commands() {
-                        break;
+
+            crossbeam_channel::select! {
+                // Priority commands (voice spawn, param changes) - always handled first
+                recv(self.priority_rx) -> result => {
+                    match result {
+                        Ok(cmd) => {
+                            if self.handle_cmd(cmd) {
+                                break;
+                            }
+                        }
+                        Err(_) => break, // Disconnected
                     }
                 }
-                Err(mpsc::RecvTimeoutError::Timeout) => {}
-                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                // Normal commands - handled when no priority commands pending
+                recv(self.normal_rx) -> result => {
+                    match result {
+                        Ok(cmd) => {
+                            if self.handle_cmd(cmd) {
+                                break;
+                            }
+                        }
+                        Err(_) => break, // Disconnected
+                    }
+                }
+                // Timeout - proceed with tick
+                default(remaining) => {}
+            }
+
+            // Drain any additional priority commands first (critical path)
+            if self.drain_priority_commands() {
+                break;
+            }
+            // Then drain normal commands
+            if self.drain_normal_commands() {
+                break;
             }
 
             let now = Instant::now();
@@ -140,17 +171,35 @@ impl AudioThread {
         }
     }
 
-    fn drain_remaining_commands(&mut self) -> bool {
+    /// Drain priority commands first (voice spawn, param changes)
+    fn drain_priority_commands(&mut self) -> bool {
         const MAX_DRAIN_PER_TICK: usize = 64;
         for _ in 0..MAX_DRAIN_PER_TICK {
-            match self.cmd_rx.try_recv() {
+            match self.priority_rx.try_recv() {
                 Ok(cmd) => {
                     if self.handle_cmd(cmd) {
                         return true;
                     }
                 }
-                Err(mpsc::TryRecvError::Empty) => return false,
-                Err(mpsc::TryRecvError::Disconnected) => return true,
+                Err(TryRecvError::Empty) => return false,
+                Err(TryRecvError::Disconnected) => return true,
+            }
+        }
+        false
+    }
+
+    /// Drain normal commands (state sync, routing)
+    fn drain_normal_commands(&mut self) -> bool {
+        const MAX_DRAIN_PER_TICK: usize = 32;
+        for _ in 0..MAX_DRAIN_PER_TICK {
+            match self.normal_rx.try_recv() {
+                Ok(cmd) => {
+                    if self.handle_cmd(cmd) {
+                        return true;
+                    }
+                }
+                Err(TryRecvError::Empty) => return false,
+                Err(TryRecvError::Disconnected) => return true,
             }
         }
         false

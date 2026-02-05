@@ -3,11 +3,11 @@ use std::path::PathBuf;
 /// Resolve the built-in synthdefs directory.
 ///
 /// Fallback chain:
-/// 1. `ILEX_SYNTHDEFS_DIR` env var (runtime override)
-/// 2. `CARGO_MANIFEST_DIR/synthdefs` (compile-time, resolves to ilex/)
+/// 1. `IMBOLC_SYNTHDEFS_DIR` env var (runtime override)
+/// 2. `CARGO_MANIFEST_DIR/synthdefs` (compile-time, resolves to imbolc-core/)
 /// 3. `./synthdefs` relative to CWD (backward compat)
 pub fn synthdefs_dir() -> PathBuf {
-    if let Ok(dir) = std::env::var("ILEX_SYNTHDEFS_DIR") {
+    if let Ok(dir) = std::env::var("IMBOLC_SYNTHDEFS_DIR") {
         return PathBuf::from(dir);
     }
 
@@ -29,12 +29,12 @@ pub fn compile_vst_scd_path() -> PathBuf {
     synthdefs_dir().join("compile_vst.scd")
 }
 
-/// User-local directory for custom synthdefs (`~/.config/ilex/synthdefs/`).
+/// User-local directory for custom synthdefs (`~/.config/imbolc/synthdefs/`).
 pub fn custom_synthdefs_dir() -> PathBuf {
     if let Some(home) = std::env::var_os("HOME") {
         PathBuf::from(home)
             .join(".config")
-            .join("ilex")
+            .join("imbolc")
             .join("synthdefs")
     } else {
         PathBuf::from("synthdefs")

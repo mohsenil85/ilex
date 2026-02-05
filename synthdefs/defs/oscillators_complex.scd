@@ -3,7 +3,7 @@
 var dir = thisProcess.nowExecutingPath.dirname.dirname;
 
 // SuperSaw — 7x detuned saw stack spread stereo
-SynthDef(\ilex_supersaw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, detune=0.3, mix=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
+SynthDef(\imbolc_supersaw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, detune=0.3, mix=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -33,7 +33,7 @@ SynthDef(\ilex_supersaw, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), f
 }).writeDefFile(dir);
 
 // Sync — Hard-sync oscillator
-SynthDef(\ilex_sync, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, sync_ratio=2.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), sync_ratio_mod_in=(-1)|
+SynthDef(\imbolc_sync, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, sync_ratio=2.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), sync_ratio_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -58,7 +58,7 @@ SynthDef(\ilex_sync, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=
 }).writeDefFile(dir);
 
 // Ring — Ring modulator (carrier × modulator)
-SynthDef(\ilex_ring, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, mod_ratio=2.0, mod_depth=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), mod_depth_mod_in=(-1)|
+SynthDef(\imbolc_ring, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, mod_ratio=2.0, mod_depth=0.5, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), mod_depth_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);
@@ -85,7 +85,7 @@ SynthDef(\ilex_ring, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=
 }).writeDefFile(dir);
 
 // FBSin — Self-modulating feedback sine
-SynthDef(\ilex_fbsin, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, feedback=0.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), feedback_mod_in=(-1)|
+SynthDef(\imbolc_fbsin, { |out=1024, freq_in=(-1), gate_in=(-1), vel_in=(-1), freq=440, amp=0.5, lag=0.02, feedback=0.0, attack=0.01, decay=0.1, sustain=0.7, release=0.3, amp_mod_in=(-1), pitch_mod_in=(-1), detune_mod_in=(-1), attack_mod_in=(-1), release_mod_in=(-1), decay_mod_in=(-1), sustain_mod_in=(-1), feedback_mod_in=(-1)|
     var freqSig = Select.kr(freq_in >= 0, [freq.lag(lag), In.kr(freq_in)]);
     var gateSig = Select.kr(gate_in >= 0, [1, In.kr(gate_in)]);
     var velSig = Select.kr(vel_in >= 0, [1, In.kr(vel_in)]);

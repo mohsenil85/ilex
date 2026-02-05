@@ -52,7 +52,7 @@ impl AudioEngine {
             }
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_audio_in", node_id, GROUP_SOURCES, &params)
+            client.create_synth("imbolc_audio_in", node_id, GROUP_SOURCES, &params)
                 .map_err(|e| e.to_string())?;
             source_node = Some(node_id);
         } else if instrument.source.is_bus_in() {
@@ -83,7 +83,7 @@ impl AudioEngine {
             ];
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_bus_in", node_id, GROUP_SOURCES, &params)
+            client.create_synth("imbolc_bus_in", node_id, GROUP_SOURCES, &params)
                 .map_err(|e| e.to_string())?;
             source_node = Some(node_id);
         } else if instrument.source.is_vst() {
@@ -95,7 +95,7 @@ impl AudioEngine {
             ];
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_vst_instrument", node_id, GROUP_SOURCES, &params)
+            client.create_synth("imbolc_vst_instrument", node_id, GROUP_SOURCES, &params)
                 .map_err(|e| e.to_string())?;
 
             if let SourceType::Vst(vst_id) = instrument.source {
@@ -123,7 +123,7 @@ impl AudioEngine {
             ];
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_lfo", lfo_node_id, GROUP_SOURCES, &params)
+            client.create_synth("imbolc_lfo", lfo_node_id, GROUP_SOURCES, &params)
                 .map_err(|e| e.to_string())?;
 
             lfo_node = Some(lfo_node_id);
@@ -189,7 +189,7 @@ impl AudioEngine {
             }
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_eq12", node_id, GROUP_PROCESSING, &params)
+            client.create_synth("imbolc_eq12", node_id, GROUP_PROCESSING, &params)
                 .map_err(|e| e.to_string())?;
 
             eq_node = Some(node_id);
@@ -304,7 +304,7 @@ impl AudioEngine {
             ];
 
             let client = self.backend.as_ref().ok_or("Not connected")?;
-            client.create_synth("ilex_output", node_id, GROUP_OUTPUT, &params)
+            client.create_synth("imbolc_output", node_id, GROUP_OUTPUT, &params)
                 .map_err(|e| e.to_string())?;
             node_id
         };
@@ -359,7 +359,7 @@ impl AudioEngine {
                     params.push(("level_mod_in".to_string(), send_lfo_bus));
                 }
                 let client = self.backend.as_ref().ok_or("Not connected")?;
-                client.create_synth("ilex_send", node_id, GROUP_OUTPUT, &params)
+                client.create_synth("imbolc_send", node_id, GROUP_OUTPUT, &params)
                     .map_err(|e| e.to_string())?;
                 self.node_registry.register(node_id);
                 self.send_node_map.insert((instrument.id, send.bus_id), node_id);
@@ -484,7 +484,7 @@ impl AudioEngine {
                 ];
                 if let Some(ref client) = self.backend {
                     client
-                        .create_synth("ilex_bus_out", node_id, GROUP_OUTPUT, &params)
+                        .create_synth("imbolc_bus_out", node_id, GROUP_OUTPUT, &params)
                         .map_err(|e| e.to_string())?;
                 }
                 self.node_registry.register(node_id);

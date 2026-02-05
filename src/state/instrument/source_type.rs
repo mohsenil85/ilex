@@ -150,34 +150,34 @@ impl SourceType {
     /// Get the SuperCollider synthdef name (static for built-ins)
     pub fn synth_def_name(&self) -> &'static str {
         match self {
-            SourceType::Saw => "ilex_saw",
-            SourceType::Sin => "ilex_sin",
-            SourceType::Sqr => "ilex_sqr",
-            SourceType::Tri => "ilex_tri",
-            SourceType::Noise => "ilex_noise",
-            SourceType::Pulse => "ilex_pulse",
-            SourceType::SuperSaw => "ilex_supersaw",
-            SourceType::Sync => "ilex_sync",
-            SourceType::Ring => "ilex_ring",
-            SourceType::FBSin => "ilex_fbsin",
-            SourceType::FM => "ilex_fm",
-            SourceType::PhaseMod => "ilex_phasemod",
-            SourceType::Pluck => "ilex_pluck",
-            SourceType::Formant => "ilex_formant",
-            SourceType::Gendy => "ilex_gendy",
-            SourceType::Chaos => "ilex_chaos",
-            SourceType::Additive => "ilex_additive",
-            SourceType::Wavetable => "ilex_wavetable",
-            SourceType::Granular => "ilex_granular",
-            SourceType::Bowed => "ilex_bowed",
-            SourceType::Blown => "ilex_blown",
-            SourceType::Membrane => "ilex_membrane",
-            SourceType::AudioIn => "ilex_audio_in",
-            SourceType::BusIn => "ilex_bus_in",
-            SourceType::PitchedSampler => "ilex_sampler",
-            SourceType::Kit => "ilex_sampler_oneshot",
-            SourceType::Custom(_) => "ilex_saw", // Fallback, use synth_def_name_with_registry instead
-            SourceType::Vst(_) => "ilex_vst_instrument",
+            SourceType::Saw => "imbolc_saw",
+            SourceType::Sin => "imbolc_sin",
+            SourceType::Sqr => "imbolc_sqr",
+            SourceType::Tri => "imbolc_tri",
+            SourceType::Noise => "imbolc_noise",
+            SourceType::Pulse => "imbolc_pulse",
+            SourceType::SuperSaw => "imbolc_supersaw",
+            SourceType::Sync => "imbolc_sync",
+            SourceType::Ring => "imbolc_ring",
+            SourceType::FBSin => "imbolc_fbsin",
+            SourceType::FM => "imbolc_fm",
+            SourceType::PhaseMod => "imbolc_phasemod",
+            SourceType::Pluck => "imbolc_pluck",
+            SourceType::Formant => "imbolc_formant",
+            SourceType::Gendy => "imbolc_gendy",
+            SourceType::Chaos => "imbolc_chaos",
+            SourceType::Additive => "imbolc_additive",
+            SourceType::Wavetable => "imbolc_wavetable",
+            SourceType::Granular => "imbolc_granular",
+            SourceType::Bowed => "imbolc_bowed",
+            SourceType::Blown => "imbolc_blown",
+            SourceType::Membrane => "imbolc_membrane",
+            SourceType::AudioIn => "imbolc_audio_in",
+            SourceType::BusIn => "imbolc_bus_in",
+            SourceType::PitchedSampler => "imbolc_sampler",
+            SourceType::Kit => "imbolc_sampler_oneshot",
+            SourceType::Custom(_) => "imbolc_saw", // Fallback, use synth_def_name_with_registry instead
+            SourceType::Vst(_) => "imbolc_vst_instrument",
         }
     }
 
@@ -187,8 +187,8 @@ impl SourceType {
             SourceType::Custom(id) => registry
                 .get(*id)
                 .map(|s| s.synthdef_name.clone())
-                .unwrap_or_else(|| "ilex_saw".to_string()),
-            SourceType::Vst(_) => "ilex_vst_instrument".to_string(),
+                .unwrap_or_else(|| "imbolc_saw".to_string()),
+            SourceType::Vst(_) => "imbolc_vst_instrument".to_string(),
             _ => self.synth_def_name().to_string(),
         }
     }

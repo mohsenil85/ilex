@@ -242,7 +242,7 @@ pub fn compile_synthdef(
     );
 
     // Write temp compile script
-    let temp_script = std::env::temp_dir().join("ilex_compile_custom.scd");
+    let temp_script = std::env::temp_dir().join("imbolc_compile_custom.scd");
     std::fs::write(&temp_script, &compile_script)
         .map_err(|e| format!("Failed to write compile script: {}", e))?;
 

@@ -32,7 +32,7 @@ pub const GROUP_OUTPUT: i32 = 300;
 pub const GROUP_RECORD: i32 = 400;
 pub const GROUP_SAFETY: i32 = 999;
 
-// Wavetable buffer range for VOsc (ilex_wavetable SynthDef)
+// Wavetable buffer range for VOsc (imbolc_wavetable SynthDef)
 pub const WAVETABLE_BUFNUM_START: i32 = 100;
 pub const WAVETABLE_NUM_TABLES: i32 = 8;
 
@@ -51,7 +51,7 @@ pub enum ServerStatus {
     Error,
 }
 
-/// VSTPlugin UGen index within wrapper SynthDefs (ilex_vst_instrument, ilex_vst_effect).
+/// VSTPlugin UGen index within wrapper SynthDefs (imbolc_vst_instrument, imbolc_vst_effect).
 /// This is 0 because VSTPlugin is the first (and only) UGen in our wrappers.
 const VST_UGEN_INDEX: i32 = 0;
 
@@ -604,9 +604,9 @@ mod tests {
             assert!(nodes.lfo.is_none(), "LFO disabled by default");
             assert!(nodes.filter.is_none(), "no filter by default");
             let synths = backend.synths_created();
-            let output_synth = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, group_id, .. } if def_name == "ilex_output" && *group_id == GROUP_OUTPUT));
+            let output_synth = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, group_id, .. } if def_name == "imbolc_output" && *group_id == GROUP_OUTPUT));
             assert!(output_synth.is_some(), "output synth must be created in GROUP_OUTPUT");
-            let bus_out_count = backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_bus_out"));
+            let bus_out_count = backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_bus_out"));
             assert_eq!(bus_out_count, state.session.buses.len(), "one bus output synth per mixer bus");
         }
 
@@ -626,11 +626,11 @@ mod tests {
             assert!(nodes.filter.is_some(), "filter was added");
             assert_eq!(nodes.effects.len(), 2, "two effects were added");
             let synths = backend.synths_created();
-            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_audio_in")));
-            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_lpf")));
-            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_delay")));
-            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_reverb")));
-            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_output")));
+            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_audio_in")));
+            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_lpf")));
+            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_delay")));
+            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_reverb")));
+            assert!(synths.iter().any(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_output")));
         }
 
         #[test]
@@ -643,7 +643,7 @@ mod tests {
                 inst.sends[0].level = 0.5;
             }
             engine.rebuild_instrument_routing(&state.instruments, &state.session).expect("rebuild routing");
-            let send_count = backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_send"));
+            let send_count = backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_send"));
             assert_eq!(send_count, 1, "one send synth for the enabled send");
             assert!(engine.send_node_map.contains_key(&(inst_id, 1)), "send node registered for bus 1");
         }
@@ -659,14 +659,14 @@ mod tests {
             }
             engine.rebuild_instrument_routing(&state.instruments, &state.session).expect("rebuild routing");
             let synths = backend.synths_created();
-            let source_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_audio_in" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("source out bus");
-            let filter_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_hpf" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("filter in bus");
+            let source_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_audio_in" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("source out bus");
+            let filter_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_hpf" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("filter in bus");
             assert_eq!(source_out, filter_in, "filter input bus must match source output bus");
-            let filter_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_hpf" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("filter out bus");
-            let delay_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_delay" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("delay in bus");
+            let filter_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_hpf" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("filter out bus");
+            let delay_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_delay" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("delay in bus");
             assert_eq!(filter_out, delay_in, "delay input bus must match filter output bus");
-            let delay_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_delay" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("delay out bus");
-            let output_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "ilex_output" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("output in bus");
+            let delay_out = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_delay" { params.iter().find(|(k, _)| k == "out").map(|(_, v)| *v) } else { None } } else { None }).expect("delay out bus");
+            let output_in = synths.iter().find_map(|op| if let TestOp::CreateSynth { def_name, params, .. } = op { if def_name == "imbolc_output" { params.iter().find(|(k, _)| k == "in").map(|(_, v)| *v) } else { None } } else { None }).expect("output in bus");
             assert_eq!(delay_out, output_in, "output input bus must match delay output bus");
         }
 
@@ -698,8 +698,8 @@ mod tests {
             engine.rebuild_instrument_routing(&state.instruments, &state.session).expect("rebuild routing");
             let nodes = engine.node_map.get(&inst_id).expect("nodes");
             assert_eq!(nodes.effects.len(), 1, "only enabled effects get nodes");
-            assert_eq!(backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_delay")), 0);
-            assert_eq!(backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_reverb")), 1);
+            assert_eq!(backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_delay")), 0);
+            assert_eq!(backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_reverb")), 1);
         }
 
         #[test]
@@ -736,7 +736,7 @@ mod tests {
             if let Some(inst) = state.instruments.instrument_mut(inst_id) { inst.mute = true; }
             engine.rebuild_instrument_routing(&state.instruments, &state.session).expect("rebuild routing");
             let synths = backend.synths_created();
-            let output = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_output"));
+            let output = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_output"));
             assert!(output.is_some(), "output synth created");
             if let Some(TestOp::CreateSynth { params, .. }) = output {
                 assert_eq!(params.iter().find(|(k, _)| k == "mute").map(|(_, v)| *v), Some(1.0));
@@ -758,7 +758,7 @@ mod tests {
             let nodes = engine.node_map.get(&inst_id).expect("nodes");
             assert!(nodes.lfo.is_some(), "LFO node should exist");
             let synths = backend.synths_created();
-            let lfo_synth = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "ilex_lfo"));
+            let lfo_synth = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_lfo"));
             assert!(lfo_synth.is_some(), "LFO synth created");
             if let Some(TestOp::CreateSynth { params, .. }) = lfo_synth {
                 assert_eq!(params.iter().find(|(k, _)| k == "rate").map(|(_, v)| *v), Some(2.0));

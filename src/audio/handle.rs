@@ -4,9 +4,11 @@
 //! AudioEngine and playback ticking live on the audio thread.
 
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
+
+use crossbeam_channel::Sender as CrossbeamSender;
 
 use super::commands::{AudioCmd, AudioFeedback};
 use super::osc_client::AudioMonitor;
@@ -45,8 +47,12 @@ impl Default for AudioReadState {
 /// Main-thread handle to the audio subsystem.
 ///
 /// Phase 3: communicates with a dedicated audio thread via MPSC channels.
+/// Uses separate priority and normal channels for reduced latency on time-critical commands.
 pub struct AudioHandle {
-    cmd_tx: Sender<AudioCmd>,
+    /// Priority commands: voice spawn/release, param changes (time-critical)
+    priority_tx: CrossbeamSender<AudioCmd>,
+    /// Normal commands: state sync, routing rebuilds, recording control
+    normal_tx: CrossbeamSender<AudioCmd>,
     feedback_rx: Receiver<AudioFeedback>,
     monitor: AudioMonitor,
     audio_state: AudioReadState,
@@ -56,18 +62,27 @@ pub struct AudioHandle {
 
 impl AudioHandle {
     pub fn new() -> Self {
-        let (cmd_tx, cmd_rx) = mpsc::channel();
+        // Create priority channel for time-critical commands (voice spawn, param changes)
+        let (priority_tx, priority_rx) = crossbeam_channel::unbounded();
+        // Create normal channel for less urgent commands (state sync, routing)
+        let (normal_tx, normal_rx) = crossbeam_channel::unbounded();
         let (feedback_tx, feedback_rx) = mpsc::channel();
         let monitor = AudioMonitor::new();
         let thread_monitor = monitor.clone();
 
         let join_handle = thread::spawn(move || {
-            let thread = super::audio_thread::AudioThread::new(cmd_rx, feedback_tx, thread_monitor);
+            let thread = super::audio_thread::AudioThread::new(
+                priority_rx,
+                normal_rx,
+                feedback_tx,
+                thread_monitor,
+            );
             thread.run();
         });
 
         Self {
-            cmd_tx,
+            priority_tx,
+            normal_tx,
             feedback_rx,
             monitor,
             audio_state: AudioReadState::default(),
@@ -76,10 +91,17 @@ impl AudioHandle {
         }
     }
 
+    /// Send a command to the audio thread, routing to priority or normal channel.
     pub fn send_cmd(&self, cmd: AudioCmd) -> Result<(), String> {
-        self.cmd_tx
-            .send(cmd)
-            .map_err(|_| "Audio thread disconnected".to_string())
+        if cmd.is_priority() {
+            self.priority_tx
+                .send(cmd)
+                .map_err(|_| "Audio thread disconnected".to_string())
+        } else {
+            self.normal_tx
+                .send(cmd)
+                .map_err(|_| "Audio thread disconnected".to_string())
+        }
     }
 
     /// Fire-and-forget: send a command and log if the audio thread is disconnected.
@@ -373,7 +395,7 @@ impl AudioHandle {
 
     pub fn connect(&mut self, server_addr: &str) -> std::io::Result<()> {
         let (reply_tx, reply_rx) = mpsc::channel();
-        self.cmd_tx
+        self.normal_tx
             .send(AudioCmd::Connect {
                 server_addr: server_addr.to_string(),
                 reply: reply_tx,
