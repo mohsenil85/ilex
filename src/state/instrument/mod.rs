@@ -33,7 +33,7 @@ pub fn instrument_row_count(
     filter: &Option<FilterConfig>,
     effects: &[EffectSlot],
 ) -> usize {
-    let sample_row = if source.is_sample() { 1 } else { 0 };
+    let sample_row = if source.is_sample() || source.is_time_stretch() { 1 } else { 0 };
     let source_rows = sample_row + source_params.len().max(1);
     let filter_rows = if let Some(ref f) = filter {
         3 + f.extra_params.len()
@@ -58,7 +58,7 @@ pub fn instrument_section_for_row(
     filter: &Option<FilterConfig>,
     effects: &[EffectSlot],
 ) -> InstrumentSection {
-    let sample_row = if source.is_sample() { 1 } else { 0 };
+    let sample_row = if source.is_sample() || source.is_time_stretch() { 1 } else { 0 };
     let source_rows = sample_row + source_params.len().max(1);
     let filter_rows = if let Some(ref f) = filter {
         3 + f.extra_params.len()
@@ -93,7 +93,7 @@ pub fn instrument_row_info(
     filter: &Option<FilterConfig>,
     effects: &[EffectSlot],
 ) -> (InstrumentSection, usize) {
-    let sample_row = if source.is_sample() { 1 } else { 0 };
+    let sample_row = if source.is_sample() || source.is_time_stretch() { 1 } else { 0 };
     let source_rows = sample_row + source_params.len().max(1);
     let filter_rows = if let Some(ref f) = filter {
         3 + f.extra_params.len()
@@ -163,7 +163,7 @@ impl Instrument {
         // Sends are initialized empty; call sync_sends_with_buses() after creation
         let sends = Vec::new();
         // Sample instruments get a sampler config
-        let sampler_config = if source.is_sample() {
+        let sampler_config = if source.is_sample() || source.is_time_stretch() {
             Some(SamplerConfig::default())
         } else {
             None
@@ -380,5 +380,30 @@ mod tests {
         let params1 = inst.effects[0].params.len();
         // Effect 2 header at pos 1+params1
         assert_eq!(inst.decode_effect_cursor(1 + params1), Some((id2, None)));
+    }
+
+    #[test]
+    fn timestretch_has_sampler_config_and_correct_params() {
+        let inst = Instrument::new(1, SourceType::TimeStretch);
+        // TimeStretch instruments should have a sampler config
+        assert!(inst.sampler_config.is_some());
+        // Should have the default TimeStretch params
+        let param_names: Vec<&str> = inst.source_params.iter().map(|p| p.name.as_str()).collect();
+        assert!(param_names.contains(&"stretch"));
+        assert!(param_names.contains(&"pitch"));
+        assert!(param_names.contains(&"grain_size"));
+        assert!(param_names.contains(&"overlap"));
+        assert!(param_names.contains(&"amp"));
+        // Should not have PitchedSampler's rate param
+        assert!(!param_names.contains(&"rate"));
+    }
+
+    #[test]
+    fn timestretch_has_sample_row_in_count() {
+        let inst = Instrument::new(1, SourceType::TimeStretch);
+        let count = inst.total_editable_rows();
+        // TimeStretch: 1 sample row + params + filter(disabled=1) + effects(empty=1) + lfo(4) + env(4)
+        let expected = 1 + inst.source_params.len().max(1) + 1 + 1 + 4 + 4;
+        assert_eq!(count, expected);
     }
 }

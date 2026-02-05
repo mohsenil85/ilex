@@ -28,8 +28,8 @@ impl AudioEngine {
             return self.send_vsti_note_on(instrument_id, pitch, velocity);
         }
 
-        // Sampler instruments need special handling
-        if instrument.source.is_sample() {
+        // Sampler and TimeStretch instruments need special handling
+        if instrument.source.is_sample() || instrument.source.is_time_stretch() {
             return self.spawn_sampler_voice(instrument_id, pitch, velocity, offset_secs, state, session);
         }
 
@@ -335,49 +335,72 @@ impl AudioEngine {
             });
         }
 
-        // 3. Sampler synth
+        // 3. Sampler/TimeStretch synth
         let sampler_node_id = self.next_node_id;
         self.next_node_id += 1;
+        let is_time_stretch = instrument.source.is_time_stretch();
         {
+            let synthdef_name = if is_time_stretch {
+                "imbolc_timestretch"
+            } else {
+                "imbolc_sampler"
+            };
+
             let mut args: Vec<RawArg> = vec![
-                RawArg::Str("imbolc_sampler".to_string()),
+                RawArg::Str(synthdef_name.to_string()),
                 RawArg::Int(sampler_node_id),
                 RawArg::Int(1),
                 RawArg::Int(group_id),
             ];
 
-            // Get rate and amp from source params
-            let rate = instrument.source_params.iter()
-                .find(|p| p.name == "rate")
-                .map(|p| match &p.value {
-                    ParamValue::Float(v) => *v,
-                    _ => 1.0,
-                })
-                .unwrap_or(1.0);
+            // Helper to get float param
+            let get_param = |name: &str, default: f32| -> f32 {
+                instrument.source_params.iter()
+                    .find(|p| p.name == name)
+                    .map(|p| match &p.value {
+                        ParamValue::Float(v) => *v,
+                        ParamValue::Int(v) => *v as f32,
+                        _ => default,
+                    })
+                    .unwrap_or(default)
+            };
 
-            let amp = instrument.source_params.iter()
-                .find(|p| p.name == "amp")
-                .map(|p| match &p.value {
-                    ParamValue::Float(v) => *v,
-                    _ => 0.8,
-                })
-                .unwrap_or(0.8);
-
+            let amp = get_param("amp", 0.8);
             let loop_mode = sampler_config.loop_mode;
 
-            // Sampler params
+            // Common params for both
             args.push(RawArg::Str("bufnum".to_string()));
             args.push(RawArg::Float(bufnum as f32));
             args.push(RawArg::Str("sliceStart".to_string()));
             args.push(RawArg::Float(slice_start));
             args.push(RawArg::Str("sliceEnd".to_string()));
             args.push(RawArg::Float(slice_end));
-            args.push(RawArg::Str("rate".to_string()));
-            args.push(RawArg::Float(rate));
             args.push(RawArg::Str("amp".to_string()));
             args.push(RawArg::Float(amp));
-            args.push(RawArg::Str("loop".to_string()));
-            args.push(RawArg::Float(if loop_mode { 1.0 } else { 0.0 }));
+
+            if is_time_stretch {
+                // TimeStretch-specific params
+                let stretch = get_param("stretch", 1.0);
+                let pitch = get_param("pitch", 0.0);
+                let grain_size = get_param("grain_size", 0.1);
+                let overlap = get_param("overlap", 4.0);
+
+                args.push(RawArg::Str("stretch".to_string()));
+                args.push(RawArg::Float(stretch));
+                args.push(RawArg::Str("pitch".to_string()));
+                args.push(RawArg::Float(pitch));
+                args.push(RawArg::Str("grain_size".to_string()));
+                args.push(RawArg::Float(grain_size));
+                args.push(RawArg::Str("overlap".to_string()));
+                args.push(RawArg::Float(overlap));
+            } else {
+                // PitchedSampler-specific params
+                let rate = get_param("rate", 1.0);
+                args.push(RawArg::Str("rate".to_string()));
+                args.push(RawArg::Float(rate));
+                args.push(RawArg::Str("loop".to_string()));
+                args.push(RawArg::Float(if loop_mode { 1.0 } else { 0.0 }));
+            }
 
             // Wire control inputs (for pitch tracking if enabled)
             if sampler_config.pitch_tracking {
@@ -403,7 +426,7 @@ impl AudioEngine {
             args.push(RawArg::Str("out".to_string()));
             args.push(RawArg::Float(source_out_bus as f32));
 
-            // Wire LFO mod inputs for sampler voice
+            // Wire LFO mod inputs for sampler/timestretch voice
             if instrument.lfo.enabled {
                 if let Some(lfo_bus) = self.bus_allocator.get_control_bus(instrument_id, "lfo_out") {
                     match instrument.lfo.target {
@@ -411,7 +434,7 @@ impl AudioEngine {
                             args.push(RawArg::Str("amp_mod_in".to_string()));
                             args.push(RawArg::Float(lfo_bus as f32));
                         }
-                        LfoTarget::SampleRate => {
+                        LfoTarget::SampleRate if !is_time_stretch => {
                             args.push(RawArg::Str("srate_mod_in".to_string()));
                             args.push(RawArg::Float(lfo_bus as f32));
                         }
@@ -429,6 +452,18 @@ impl AudioEngine {
                         }
                         LfoTarget::Sustain => {
                             args.push(RawArg::Str("sustain_mod_in".to_string()));
+                            args.push(RawArg::Float(lfo_bus as f32));
+                        }
+                        LfoTarget::StretchRatio if is_time_stretch => {
+                            args.push(RawArg::Str("stretch_mod_in".to_string()));
+                            args.push(RawArg::Float(lfo_bus as f32));
+                        }
+                        LfoTarget::PitchShift if is_time_stretch => {
+                            args.push(RawArg::Str("pitch_mod_in".to_string()));
+                            args.push(RawArg::Float(lfo_bus as f32));
+                        }
+                        LfoTarget::GrainSize if is_time_stretch => {
+                            args.push(RawArg::Str("grain_size_mod_in".to_string()));
                             args.push(RawArg::Float(lfo_bus as f32));
                         }
                         _ => {} // Routing-level targets handled in routing.rs
