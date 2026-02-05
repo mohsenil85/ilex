@@ -6,9 +6,12 @@ use crate::state::BufferId;
 
 impl AudioEngine {
     pub fn load_synthdefs(&self, dir: &Path) -> Result<(), String> {
+        log::debug!(target: "audio::samples", "load_synthdefs called with: {:?}", dir);
         let backend = self.backend.as_ref().ok_or("Not connected")?;
+        log::debug!(target: "audio::samples", "Backend available");
 
         let abs_dir = dir.canonicalize().map_err(|e| format!("Cannot resolve synthdef dir {:?}: {}", dir, e))?;
+        log::debug!(target: "audio::samples", "Canonicalized to: {:?}", abs_dir);
         let dir_str = abs_dir.to_str().ok_or_else(|| "Synthdef dir path is not valid UTF-8".to_string())?;
 
         backend

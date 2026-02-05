@@ -55,8 +55,9 @@ impl NodeRegistry {
         if self.live_nodes.contains(&node_id) {
             true
         } else {
-            eprintln!(
-                "[node_registry] warning: node {} is not tracked as live",
+            log::warn!(
+                target: "audio::nodes",
+                "node {} is not tracked as live",
                 node_id
             );
             false

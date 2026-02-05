@@ -40,9 +40,9 @@ impl Config {
                 match std::fs::read_to_string(&path) {
                     Ok(contents) => match toml::from_str::<ConfigFile>(&contents) {
                         Ok(user) => merge_defaults(&mut base.defaults, user.defaults),
-                        Err(e) => eprintln!("Warning: ignoring malformed config {}: {}", path.display(), e),
+                        Err(e) => log::warn!(target: "config", "ignoring malformed config {}: {}", path.display(), e),
                     },
-                    Err(e) => eprintln!("Warning: could not read config {}: {}", path.display(), e),
+                    Err(e) => log::warn!(target: "config", "could not read config {}: {}", path.display(), e),
                 }
             }
         }

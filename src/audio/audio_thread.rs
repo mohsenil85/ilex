@@ -625,7 +625,11 @@ impl AudioThread {
 
     fn load_synthdefs_and_samples(&mut self) -> Result<(), String> {
         let synthdef_dir = crate::paths::synthdefs_dir();
+        log::debug!(target: "audio", "Loading synthdefs from: {:?}", synthdef_dir);
+        log::debug!(target: "audio", "Path exists: {}", synthdef_dir.exists());
+
         let builtin_result = self.engine.load_synthdefs(&synthdef_dir);
+        log::debug!(target: "audio", "Builtin load result: {:?}", builtin_result);
 
         let config_dir = crate::paths::custom_synthdefs_dir();
         let custom_result = if config_dir.exists() {

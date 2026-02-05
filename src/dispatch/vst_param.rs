@@ -104,7 +104,7 @@ pub(super) fn dispatch_vst_param(
                     param_index: *param_index,
                     value,
                 }) {
-                    eprintln!("[audio] SetVstParam dropped: {}", e);
+                    log::warn!(target: "dispatch::vst", "SetVstParam dropped: {}", e);
                 }
             }
             // Record automation when recording + playing
@@ -193,7 +193,7 @@ pub(super) fn dispatch_vst_param(
                         instrument_id: *instrument_id,
                         target: *target,
                     }) {
-                        eprintln!("[audio] QueryVstParams dropped: {}", e);
+                        log::warn!(target: "dispatch::vst", "QueryVstParams dropped: {}", e);
                     }
                 }
             }
@@ -235,7 +235,7 @@ pub(super) fn dispatch_vst_param(
                         target: *target,
                         path,
                     }) {
-                        eprintln!("[audio] SaveVstState dropped: {}", e);
+                        log::warn!(target: "dispatch::vst", "SaveVstState dropped: {}", e);
                     }
                 }
             }
