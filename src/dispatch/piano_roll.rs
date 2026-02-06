@@ -18,14 +18,14 @@ pub(super) fn dispatch_piano_roll(
         }
         PianoRollAction::PlayStop => {
             // Ignore play/stop while exporting — user must cancel first
-            if state.pending_export.is_some() || state.pending_render.is_some() {
+            if state.io.pending_export.is_some() || state.io.pending_render.is_some() {
                 return DispatchResult::none();
             }
             let pr = &mut state.session.piano_roll;
             pr.playing = !pr.playing;
             audio.set_playing(pr.playing);
             if !pr.playing {
-                state.audio_playhead = 0;
+                state.audio.playhead = 0;
                 audio.reset_playhead();
                 if audio.is_running() {
                     audio.release_all_voices();
@@ -48,7 +48,7 @@ pub(super) fn dispatch_piano_roll(
                 // Stop playing + recording
                 let pr = &mut state.session.piano_roll;
                 pr.playing = false;
-                state.audio_playhead = 0;
+                state.audio.playhead = 0;
                 audio.set_playing(false);
                 audio.reset_playhead();
                 if audio.is_running() {
@@ -134,7 +134,7 @@ pub(super) fn dispatch_piano_roll(
                     Some(shape) => shape.expand(pitch),
                     None => vec![pitch],
                 };
-                let playhead = state.audio_playhead;
+                let playhead = state.audio.playhead;
                 let duration = 480; // One beat for live recording
                 for &p in &record_pitches {
                     state.session.piano_roll.toggle_note(track, p, playhead, duration, velocity);
@@ -182,7 +182,7 @@ pub(super) fn dispatch_piano_roll(
                         None => vec![pitch],
                     }
                 }).collect();
-                let playhead = state.audio_playhead;
+                let playhead = state.audio.playhead;
                 let duration = 480; // One beat for live recording
                 for &p in &all_pitches {
                     state.session.piano_roll.toggle_note(track, p, playhead, duration, velocity);
@@ -202,7 +202,7 @@ pub(super) fn dispatch_piano_roll(
         }
         PianoRollAction::RenderToWav(instrument_id) => {
             let instrument_id = *instrument_id;
-            if state.pending_render.is_some() || state.pending_export.is_some() {
+            if state.io.pending_render.is_some() || state.io.pending_export.is_some() {
                 return DispatchResult::with_status(crate::audio::ServerStatus::Running, "Already rendering or exporting");
             }
             if !audio.is_running() {
@@ -219,7 +219,7 @@ pub(super) fn dispatch_piano_roll(
             let path = render_dir.join(format!("render_{}_{}.wav", instrument_id, timestamp));
 
             let pr = &mut state.session.piano_roll;
-            state.pending_render = Some(crate::state::PendingRender {
+            state.io.pending_render = Some(crate::state::PendingRender {
                 instrument_id,
                 path: path.clone(),
                 was_looping: pr.looping,
@@ -230,7 +230,7 @@ pub(super) fn dispatch_piano_roll(
             pr.looping = false;
 
             if let Err(e) = audio.start_instrument_render(instrument_id, &path) {
-                state.pending_render = None;
+                state.io.pending_render = None;
                 state.session.piano_roll.playing = false;
                 return DispatchResult::with_status(crate::audio::ServerStatus::Error, format!("Render failed: {}", e));
             }
@@ -275,7 +275,7 @@ pub(super) fn dispatch_piano_roll(
             return result;
         }
         PianoRollAction::BounceToWav => {
-            if state.pending_render.is_some() || state.pending_export.is_some() {
+            if state.io.pending_render.is_some() || state.io.pending_export.is_some() {
                 return DispatchResult::with_status(crate::audio::ServerStatus::Running, "Already rendering or exporting");
             }
             if !audio.is_running() {
@@ -295,7 +295,7 @@ pub(super) fn dispatch_piano_roll(
             let path = export_dir.join(format!("bounce_{}.wav", timestamp));
 
             let pr = &mut state.session.piano_roll;
-            state.pending_export = Some(crate::state::PendingExport {
+            state.io.pending_export = Some(crate::state::PendingExport {
                 kind: crate::audio::commands::ExportKind::MasterBounce,
                 was_looping: pr.looping,
                 paths: vec![path.clone()],
@@ -306,7 +306,7 @@ pub(super) fn dispatch_piano_roll(
             pr.looping = false;
 
             if let Err(e) = audio.start_master_bounce(&path) {
-                state.pending_export = None;
+                state.io.pending_export = None;
                 state.session.piano_roll.playing = false;
                 return DispatchResult::with_status(
                     crate::audio::ServerStatus::Error,
@@ -322,7 +322,7 @@ pub(super) fn dispatch_piano_roll(
             return result;
         }
         PianoRollAction::ExportStems => {
-            if state.pending_render.is_some() || state.pending_export.is_some() {
+            if state.io.pending_render.is_some() || state.io.pending_export.is_some() {
                 return DispatchResult::with_status(crate::audio::ServerStatus::Running, "Already rendering or exporting");
             }
             if !audio.is_running() {
@@ -355,7 +355,7 @@ pub(super) fn dispatch_piano_roll(
             }
 
             let pr = &mut state.session.piano_roll;
-            state.pending_export = Some(crate::state::PendingExport {
+            state.io.pending_export = Some(crate::state::PendingExport {
                 kind: crate::audio::commands::ExportKind::StemExport,
                 was_looping: pr.looping,
                 paths,
@@ -366,7 +366,7 @@ pub(super) fn dispatch_piano_roll(
             pr.looping = false;
 
             if let Err(e) = audio.start_stem_export(&stems) {
-                state.pending_export = None;
+                state.io.pending_export = None;
                 state.session.piano_roll.playing = false;
                 return DispatchResult::with_status(
                     crate::audio::ServerStatus::Error,
@@ -382,15 +382,15 @@ pub(super) fn dispatch_piano_roll(
             return result;
         }
         PianoRollAction::CancelExport => {
-            if state.pending_export.is_some() {
+            if state.io.pending_export.is_some() {
                 let _ = audio.cancel_export();
                 let pr = &mut state.session.piano_roll;
-                if let Some(export) = state.pending_export.take() {
+                if let Some(export) = state.io.pending_export.take() {
                     pr.looping = export.was_looping;
                 }
                 pr.playing = false;
-                state.audio_playhead = 0;
-                state.export_progress = 0.0;
+                state.audio.playhead = 0;
+                state.io.export_progress = 0.0;
                 audio.reset_playhead();
                 let mut result = DispatchResult::with_status(
                     crate::audio::ServerStatus::Running,
@@ -476,7 +476,7 @@ mod tests {
     #[test]
     fn play_stop_noop_while_exporting() {
         let (mut state, mut audio) = setup();
-        state.pending_export = Some(crate::state::PendingExport {
+        state.io.pending_export = Some(crate::state::PendingExport {
             kind: crate::audio::commands::ExportKind::MasterBounce,
             was_looping: false,
             paths: vec![],

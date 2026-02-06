@@ -106,10 +106,10 @@ pub fn tick_drum_sequencer(
                                 }
                                 let mut amp = (step_data.velocity as f32 / 127.0) * pad.level;
                                 // Velocity humanization
-                                if session.humanize_velocity > 0.0 {
+                                if session.humanize.velocity > 0.0 {
                                     *rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
                                     let r = ((*rng_state >> 33) as f32) / (u32::MAX as f32);
-                                    let jitter = (r - 0.5) * 2.0 * session.humanize_velocity * (30.0 / 127.0);
+                                    let jitter = (r - 0.5) * 2.0 * session.humanize.velocity * (30.0 / 127.0);
                                     amp = (amp + jitter).clamp(0.01, 1.0);
                                 }
                                 let total_pitch = pad.pitch as i16 + step_data.pitch_offset as i16;

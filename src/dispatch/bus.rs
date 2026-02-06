@@ -43,11 +43,11 @@ pub fn dispatch_bus(action: &BusAction, state: &mut AppState, _audio: &mut Audio
             state.session.remove_bus(bus_id);
 
             // Update mixer selection if it was pointing to the removed bus
-            if let crate::state::MixerSelection::Bus(id) = state.session.mixer_selection {
+            if let crate::state::MixerSelection::Bus(id) = state.session.mixer.selection {
                 if id == bus_id {
                     // Select first remaining bus, or Master if none
                     let first_bus = state.session.bus_ids().next();
-                    state.session.mixer_selection = first_bus
+                    state.session.mixer.selection = first_bus
                         .map(crate::state::MixerSelection::Bus)
                         .unwrap_or(crate::state::MixerSelection::Master);
                 }
@@ -82,11 +82,11 @@ mod tests {
     #[test]
     fn add_bus() {
         let (mut state, mut audio) = setup();
-        let initial_count = state.session.buses.len();
+        let initial_count = state.session.mixer.buses.len();
 
         dispatch_bus(&BusAction::Add, &mut state, &mut audio);
 
-        assert_eq!(state.session.buses.len(), initial_count + 1);
+        assert_eq!(state.session.mixer.buses.len(), initial_count + 1);
     }
 
     #[test]

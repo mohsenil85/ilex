@@ -71,7 +71,7 @@ pub(super) fn handle_adjust_filter_cutoff(
             filter.cutoff.value = (filter.cutoff.value + delta * filter.cutoff.max * 0.02)
                 .clamp(filter.cutoff.min, filter.cutoff.max);
             new_cutoff = Some(filter.cutoff.value);
-            if state.automation_recording && state.session.piano_roll.playing {
+            if state.recording.automation_recording && state.session.piano_roll.playing {
                 let target = AutomationTarget::FilterCutoff(instrument.id);
                 record_target = Some((target.clone(), target.normalize_value(filter.cutoff.value)));
             }
@@ -102,7 +102,7 @@ pub(super) fn handle_adjust_filter_resonance(
             filter.resonance.value = (filter.resonance.value + delta * 0.05)
                 .clamp(filter.resonance.min, filter.resonance.max);
             new_resonance = Some(filter.resonance.value);
-            if state.automation_recording && state.session.piano_roll.playing {
+            if state.recording.automation_recording && state.session.piano_roll.playing {
                 let target = AutomationTarget::FilterResonance(instrument.id);
                 record_target = Some((target.clone(), target.normalize_value(filter.resonance.value)));
             }

@@ -247,8 +247,8 @@ impl AudioHandle {
 
     fn send_mixer_params_incremental(&self, state: &AppState) {
         self.send(AudioCmd::SetMasterParams {
-            level: state.session.master_level,
-            mute: state.session.master_mute,
+            level: state.session.mixer.master_level,
+            mute: state.session.mixer.master_mute,
         });
         for inst in &state.instruments.instruments {
             self.send(AudioCmd::SetInstrumentMixerParams {

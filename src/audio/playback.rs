@@ -104,8 +104,8 @@ pub fn tick_playback(
     if let Some((note_ons, _old_playhead, new_playhead, tick_delta, secs_per_tick)) = playback_data {
         if engine.is_running() {
             let swing_amount = piano_roll.swing_amount;
-            let humanize_vel = session.humanize_velocity;
-            let humanize_time = session.humanize_timing;
+            let humanize_vel = session.humanize.velocity;
+            let humanize_time = session.humanize.timing;
             for &(instrument_id, pitch, velocity, duration, note_tick, probability, ticks_from_old) in &note_ons {
                 // Probability check: skip note if random exceeds probability
                 if probability < 1.0 && next_random(rng_state) > probability {

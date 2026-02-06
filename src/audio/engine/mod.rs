@@ -239,7 +239,7 @@ mod tests {
         assert!(nodes.lfo.is_some());
         assert_eq!(nodes.effects.len(), 1);
         assert!(engine.send_node_map.contains_key(&(inst_id, 1)));
-        assert_eq!(engine.bus_node_map.len(), state.session.buses.len());
+        assert_eq!(engine.bus_node_map.len(), state.session.mixer.buses.len());
     }
 
     #[test]
@@ -600,7 +600,7 @@ mod tests {
             let output_synth = synths.iter().find(|op| matches!(op, TestOp::CreateSynth { def_name, group_id, .. } if def_name == "imbolc_output" && *group_id == GROUP_OUTPUT));
             assert!(output_synth.is_some(), "output synth must be created in GROUP_OUTPUT");
             let bus_out_count = backend.count(|op| matches!(op, TestOp::CreateSynth { def_name, .. } if def_name == "imbolc_bus_out"));
-            assert_eq!(bus_out_count, state.session.buses.len(), "one bus output synth per mixer bus");
+            assert_eq!(bus_out_count, state.session.mixer.buses.len(), "one bus output synth per mixer bus");
         }
 
         #[test]

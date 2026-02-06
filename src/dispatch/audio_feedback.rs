@@ -12,10 +12,10 @@ pub fn dispatch_audio_feedback(
 
     match feedback {
         AudioFeedback::PlayheadPosition(playhead) => {
-            state.audio_playhead = *playhead;
+            state.audio.playhead = *playhead;
         }
         AudioFeedback::BpmUpdate(bpm) => {
-            state.audio_bpm = *bpm;
+            state.audio.bpm = *bpm;
         }
         AudioFeedback::DrumSequencerStep { instrument_id, step } => {
             if let Some(inst) = state.instruments.instrument_mut(*instrument_id) {
@@ -29,17 +29,17 @@ pub fn dispatch_audio_feedback(
             result.push_status_with_running(*status, message.clone(), *server_running);
         }
         AudioFeedback::RecordingState { is_recording, elapsed_secs } => {
-            state.recording = *is_recording;
-            state.recording_secs = *elapsed_secs;
+            state.recording.recording = *is_recording;
+            state.recording.recording_secs = *elapsed_secs;
         }
         AudioFeedback::RecordingStopped(path) => {
-            state.pending_recording_path = Some(path.clone());
+            state.recording.pending_recording_path = Some(path.clone());
         }
         AudioFeedback::RenderComplete { instrument_id, path } => {
             // Stop playback and restore looping
             state.session.piano_roll.playing = false;
-            state.audio_playhead = 0;
-            if let Some(render) = state.pending_render.take() {
+            state.audio.playhead = 0;
+            if let Some(render) = state.io.pending_render.take() {
                 state.session.piano_roll.looping = render.was_looping;
             }
             result.stop_playback = true;
@@ -71,7 +71,7 @@ pub fn dispatch_audio_feedback(
             }
         }
         AudioFeedback::PendingBufferFreed => {
-            if let Some(path) = state.pending_recording_path.take() {
+            if let Some(path) = state.recording.pending_recording_path.take() {
                 let (peaks, _) = super::helpers::compute_waveform_peaks(&path.to_string_lossy());
                 if !peaks.is_empty() {
                     state.recorded_waveform_peaks = Some(peaks);
@@ -114,11 +114,11 @@ pub fn dispatch_audio_feedback(
         }
         AudioFeedback::ExportComplete { kind, paths } => {
             state.session.piano_roll.playing = false;
-            state.audio_playhead = 0;
-            if let Some(export) = state.pending_export.take() {
+            state.audio.playhead = 0;
+            if let Some(export) = state.io.pending_export.take() {
                 state.session.piano_roll.looping = export.was_looping;
             }
-            state.export_progress = 0.0;
+            state.io.export_progress = 0.0;
             result.stop_playback = true;
             result.reset_playhead = true;
 
@@ -133,7 +133,7 @@ pub fn dispatch_audio_feedback(
             result.push_status(audio.status(), message);
         }
         AudioFeedback::ExportProgress { progress } => {
-            state.export_progress = *progress;
+            state.io.export_progress = *progress;
         }
         AudioFeedback::VstStateSaved { instrument_id, target, path } => {
             if let Some(instrument) = state.instruments.instrument_mut(*instrument_id) {

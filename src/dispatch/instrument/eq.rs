@@ -25,7 +25,7 @@ pub(super) fn handle_set_eq_param(
                     "on" => band.enabled = value > 0.5,
                     _ => {}
                 }
-                if state.automation_recording && state.session.piano_roll.playing {
+                if state.recording.automation_recording && state.session.piano_roll.playing {
                     let param_idx = match param_name {
                         "freq" => Some(0),
                         "gain" => Some(1),

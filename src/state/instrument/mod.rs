@@ -12,7 +12,7 @@ pub use envelope::*;
 
 // Re-export types from imbolc-types
 pub use imbolc_types::{
-    InstrumentId, InstrumentSection, MAX_BUSES, MixerBus, MixerSend,
+    InstrumentId, InstrumentSection, MixerBus, MixerSend,
     ModSource, ModulatedParam, OutputTarget,
 };
 

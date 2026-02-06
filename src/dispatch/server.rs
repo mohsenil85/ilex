@@ -91,7 +91,7 @@ pub(super) fn dispatch_server(
                         }
                     }
                     // Defer waveform load — scsynth needs time to flush the WAV
-                    state.pending_recording_path = Some(path.clone());
+                    state.recording.pending_recording_path = Some(path.clone());
                     result.push_status(
                         audio.status(),
                         &format!("Recording saved: {}", path.display()),
@@ -132,7 +132,7 @@ pub(super) fn dispatch_server(
                         }
                     }
                     // Defer waveform load — scsynth needs time to flush the WAV
-                    state.pending_recording_path = Some(path.clone());
+                    state.recording.pending_recording_path = Some(path.clone());
                     result.push_status(
                         audio.status(),
                         &format!("Recording saved: {}", path.display()),

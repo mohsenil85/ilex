@@ -1,4 +1,5 @@
 pub mod arpeggiator;
+pub mod audio_feedback;
 pub mod automation;
 pub mod arrangement;
 pub mod clipboard;
@@ -7,6 +8,7 @@ pub mod drum_sequencer;
 pub mod grid;
 pub mod instrument;
 pub mod instrument_state;
+pub mod midi_connection;
 pub mod midi_recording;
 pub mod music;
 pub mod param;
@@ -18,7 +20,9 @@ pub mod session;
 pub mod undo;
 pub mod vst_plugin;
 
+pub use audio_feedback::AudioFeedbackState;
 pub use automation::AutomationTarget;
+pub use midi_connection::MidiConnectionState;
 pub use arrangement::{ArrangementState, Clip, ClipId, ClipPlacement, PlayMode, PlacementId};
 pub use clipboard::{Clipboard, ClipboardContents, ClipboardNote};
 pub use custom_synthdef::{CustomSynthDef, CustomSynthDefRegistry, ParamSpec};
@@ -28,58 +32,35 @@ pub use instrument::{SourceTypeExt, EffectTypeExt};
 pub use instrument_state::InstrumentState;
 pub use param::{Param, ParamValue, adjust_freq_semitone, adjust_musical_step, is_freq_param};
 pub use sampler::BufferId;
-pub use session::{MixerSelection, MusicalSettings, SessionState, MAX_BUSES, DEFAULT_BUS_COUNT};
+pub use session::{MixerSelection, MixerState, MusicalSettings, SessionState, MAX_BUSES, DEFAULT_BUS_COUNT};
 pub use undo::UndoHistory;
 pub use vst_plugin::{VstParamSpec, VstPlugin, VstPluginId, VstPluginKind, VstPluginRegistry};
 
 // Re-export types moved to imbolc-types
 pub use imbolc_types::{
-    IoGeneration, KeyboardLayout, PendingExport, PendingRender, VisualizationState,
+    IoGeneration, IoState, KeyboardLayout, PendingExport, PendingRender, ProjectMeta,
+    RecordingState, VisualizationState,
 };
-
-use std::path::PathBuf;
-
-use crate::audio::ServerStatus;
 
 /// Top-level application state, owned by main.rs and passed to panes by reference.
 pub struct AppState {
     pub session: SessionState,
     pub instruments: InstrumentState,
     pub clipboard: Clipboard,
-    /// Path to a recently stopped recording, pending waveform load
-    pub pending_recording_path: Option<std::path::PathBuf>,
-    /// Pending render-to-WAV operation
-    pub pending_render: Option<PendingRender>,
-    /// Pending export operation (master bounce or stem export)
-    pub pending_export: Option<PendingExport>,
-    /// Export progress (0.0 to 1.0)
-    pub export_progress: f32,
+    /// I/O state for render and export operations
+    pub io: IoState,
     pub keyboard_layout: KeyboardLayout,
-    pub recording: bool,
-    pub recording_secs: u64,
-    pub automation_recording: bool,
-    pub io_generation: IoGeneration,
-    /// Real-time visualization data from audio analysis
-    pub visualization: VisualizationState,
+    /// Recording state (audio recording + automation recording)
+    pub recording: RecordingState,
+    /// Audio feedback state (visualization, playhead, bpm, server_status)
+    pub audio: AudioFeedbackState,
     pub recorded_waveform_peaks: Option<Vec<f32>>,
-    /// Current project file path (None = untitled/new project)
-    pub project_path: Option<PathBuf>,
-    /// Whether state has changed since last save/load
-    pub dirty: bool,
     /// Undo/redo history (owned by state so dispatch can manage it)
     pub undo_history: UndoHistory,
-    /// Musical defaults used when creating new projects
-    pub default_settings: MusicalSettings,
-    /// Available MIDI input port names (updated by main loop)
-    pub midi_port_names: Vec<String>,
-    /// Currently connected MIDI port name
-    pub midi_connected_port: Option<String>,
-    /// Audio-owned playhead position (updated from AudioReadState each frame)
-    pub audio_playhead: u32,
-    /// Audio-owned BPM (updated from AudioReadState each frame)
-    pub audio_bpm: f32,
-    /// SC server status (updated from AudioReadState each frame)
-    pub server_status: ServerStatus,
+    /// Project metadata (path, dirty flag, default settings)
+    pub project: ProjectMeta,
+    /// MIDI hardware connection state
+    pub midi: MidiConnectionState,
 }
 
 impl AppState {
@@ -89,26 +70,14 @@ impl AppState {
             session: SessionState::new(),
             instruments: InstrumentState::new(),
             clipboard: Clipboard::default(),
-            pending_recording_path: None,
-            pending_render: None,
-            pending_export: None,
-            export_progress: 0.0,
+            io: IoState::default(),
             keyboard_layout: KeyboardLayout::default(),
-            recording: false,
-            recording_secs: 0,
-            automation_recording: false,
-            io_generation: IoGeneration::default(),
-            visualization: VisualizationState::default(),
+            recording: RecordingState::default(),
+            audio: AudioFeedbackState::default(),
             recorded_waveform_peaks: None,
-            project_path: None,
-            dirty: false,
             undo_history: UndoHistory::new(500),
-            default_settings: MusicalSettings::default(),
-            midi_port_names: Vec::new(),
-            midi_connected_port: None,
-            audio_playhead: 0,
-            audio_bpm: 120.0,
-            server_status: ServerStatus::Stopped,
+            project: ProjectMeta::default(),
+            midi: MidiConnectionState::default(),
         }
     }
 
@@ -117,26 +86,14 @@ impl AppState {
             session: SessionState::new_with_defaults(defaults.clone(), session::DEFAULT_BUS_COUNT),
             instruments: InstrumentState::new(),
             clipboard: Clipboard::default(),
-            pending_recording_path: None,
-            pending_render: None,
-            pending_export: None,
-            export_progress: 0.0,
+            io: IoState::default(),
             keyboard_layout: KeyboardLayout::default(),
-            recording: false,
-            recording_secs: 0,
-            automation_recording: false,
-            io_generation: IoGeneration::default(),
-            visualization: VisualizationState::default(),
+            recording: RecordingState::default(),
+            audio: AudioFeedbackState::default(),
             recorded_waveform_peaks: None,
-            project_path: None,
-            dirty: false,
             undo_history: UndoHistory::new(500),
-            default_settings: defaults,
-            midi_port_names: Vec::new(),
-            midi_connected_port: None,
-            audio_playhead: 0,
-            audio_bpm: 120.0,
-            server_status: ServerStatus::Stopped,
+            project: ProjectMeta::new_with_defaults(defaults),
+            midi: MidiConnectionState::default(),
         }
     }
 
@@ -207,13 +164,13 @@ impl AppState {
         if self.instruments.any_instrument_solo() {
             !inst.solo
         } else {
-            inst.mute || self.session.master_mute
+            inst.mute || self.session.mixer.master_mute
         }
     }
 
     /// Move mixer selection left/right
     pub fn mixer_move(&mut self, delta: i8) {
-        self.session.mixer_selection = match self.session.mixer_selection {
+        self.session.mixer.selection = match self.session.mixer.selection {
             MixerSelection::Instrument(idx) => {
                 let new_idx = (idx as i32 + delta as i32)
                     .clamp(0, self.instruments.instruments.len().saturating_sub(1) as i32)
@@ -237,7 +194,7 @@ impl AppState {
 
     /// Jump to first (1) or last (-1) in current section
     pub fn mixer_jump(&mut self, direction: i8) {
-        self.session.mixer_selection = match self.session.mixer_selection {
+        self.session.mixer.selection = match self.session.mixer.selection {
             MixerSelection::Instrument(_) => {
                 if direction > 0 {
                     MixerSelection::Instrument(0)
@@ -263,7 +220,7 @@ impl AppState {
     /// Cycle output target for the selected instrument
     pub fn mixer_cycle_output(&mut self) {
         let bus_ids: Vec<u8> = self.session.bus_ids().collect();
-        if let MixerSelection::Instrument(idx) = self.session.mixer_selection {
+        if let MixerSelection::Instrument(idx) = self.session.mixer.selection {
             if let Some(inst) = self.instruments.instruments.get_mut(idx) {
                 inst.output_target = match inst.output_target {
                     OutputTarget::Master => {
@@ -286,7 +243,7 @@ impl AppState {
     /// Cycle output target backwards for the selected instrument
     pub fn mixer_cycle_output_reverse(&mut self) {
         let bus_ids: Vec<u8> = self.session.bus_ids().collect();
-        if let MixerSelection::Instrument(idx) = self.session.mixer_selection {
+        if let MixerSelection::Instrument(idx) = self.session.mixer.selection {
             if let Some(inst) = self.instruments.instruments.get_mut(idx) {
                 inst.output_target = match inst.output_target {
                     OutputTarget::Master => {
@@ -358,7 +315,7 @@ mod tests {
 
         // Unmute instrument but mute master
         state.instruments.instruments[0].mute = false;
-        state.session.master_mute = true;
+        state.session.mixer.master_mute = true;
         let inst = &state.instruments.instruments[0];
         assert!(state.effective_instrument_mute(inst));
     }
@@ -382,25 +339,25 @@ mod tests {
         let mut state = AppState::new();
         state.add_instrument(SourceType::Saw);
         state.add_instrument(SourceType::Sin);
-        state.session.mixer_selection = MixerSelection::Instrument(0);
+        state.session.mixer.selection = MixerSelection::Instrument(0);
 
         state.mixer_move(-1);
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Instrument(0)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Instrument(0)));
 
         state.mixer_move(10);
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Instrument(1)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Instrument(1)));
     }
 
     #[test]
     fn mixer_move_clamps_bus() {
         let mut state = AppState::new();
-        state.session.mixer_selection = MixerSelection::Bus(1);
+        state.session.mixer.selection = MixerSelection::Bus(1);
         state.mixer_move(-1);
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Bus(1)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Bus(1)));
 
         state.mixer_move(100);
         // Should clamp to last bus (DEFAULT_BUS_COUNT = 8)
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Bus(DEFAULT_BUS_COUNT)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Bus(DEFAULT_BUS_COUNT)));
     }
 
     #[test]
@@ -408,20 +365,20 @@ mod tests {
         let mut state = AppState::new();
         state.add_instrument(SourceType::Saw);
         state.add_instrument(SourceType::Sin);
-        state.session.mixer_selection = MixerSelection::Instrument(0);
+        state.session.mixer.selection = MixerSelection::Instrument(0);
 
         state.mixer_jump(-1); // jump to last
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Instrument(1)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Instrument(1)));
 
         state.mixer_jump(1); // jump to first
-        assert!(matches!(state.session.mixer_selection, MixerSelection::Instrument(0)));
+        assert!(matches!(state.session.mixer.selection, MixerSelection::Instrument(0)));
     }
 
     #[test]
     fn mixer_cycle_output() {
         let mut state = AppState::new();
         state.add_instrument(SourceType::Saw);
-        state.session.mixer_selection = MixerSelection::Instrument(0);
+        state.session.mixer.selection = MixerSelection::Instrument(0);
 
         assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Master);
         state.mixer_cycle_output();
@@ -438,7 +395,7 @@ mod tests {
     fn mixer_cycle_output_reverse() {
         let mut state = AppState::new();
         state.add_instrument(SourceType::Saw);
-        state.session.mixer_selection = MixerSelection::Instrument(0);
+        state.session.mixer.selection = MixerSelection::Instrument(0);
 
         state.mixer_cycle_output_reverse();
         assert_eq!(state.instruments.instruments[0].output_target, OutputTarget::Bus(DEFAULT_BUS_COUNT));

@@ -311,8 +311,8 @@ impl AudioThread {
                 let _ = self.engine.update_all_instrument_mixer_params(&self.instruments, &self.session);
             }
             AudioCmd::SetMasterParams { level, mute } => {
-                self.session.master_level = level;
-                self.session.master_mute = mute;
+                self.session.mixer.master_level = level;
+                self.session.mixer.master_mute = mute;
             }
             AudioCmd::SetInstrumentMixerParams { instrument_id, level, pan, mute, solo } => {
                 if let Some(inst) = self.instruments.instruments.iter_mut().find(|i| i.id == instrument_id) {

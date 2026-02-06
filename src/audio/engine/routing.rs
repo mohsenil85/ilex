@@ -287,7 +287,7 @@ impl AudioEngine {
         let output_node_id = {
             let node_id = self.next_node_id;
             self.next_node_id += 1;
-            let mute = if any_solo { !instrument.solo } else { instrument.mute || session.master_mute };
+            let mute = if any_solo { !instrument.solo } else { instrument.mute || session.mixer.master_mute };
 
             let pan_mod_bus = if instrument.lfo.enabled && instrument.lfo.target == LfoTarget::Pan {
                 lfo_control_bus.map(|b| b as f32).unwrap_or(-1.0)
@@ -297,7 +297,7 @@ impl AudioEngine {
 
             let params = vec![
                 ("in".to_string(), current_bus as f32),
-                ("level".to_string(), instrument.level * session.master_level),
+                ("level".to_string(), instrument.level * session.mixer.master_level),
                 ("mute".to_string(), if mute { 1.0 } else { 0.0 }),
                 ("pan".to_string(), instrument.pan),
                 ("pan_mod_in".to_string(), pan_mod_bus),
@@ -448,7 +448,7 @@ impl AudioEngine {
         self.node_registry.invalidate_all();
 
         // Allocate audio buses for each mixer bus first (needed by BusIn instruments)
-        for bus in &session.buses {
+        for bus in &session.mixer.buses {
             let bus_audio = self.bus_allocator.get_or_alloc_audio_bus(
                 u32::MAX - bus.id as u32,
                 "bus_out",
@@ -471,7 +471,7 @@ impl AudioEngine {
         }
 
         // Create bus output synths
-        for bus in &session.buses {
+        for bus in &session.mixer.buses {
             if let Some(&bus_audio) = self.bus_audio_buses.get(&bus.id) {
                 let node_id = self.next_node_id;
                 self.next_node_id += 1;
@@ -589,8 +589,8 @@ impl AudioEngine {
         let any_solo = state.any_instrument_solo();
         for instrument in &state.instruments {
             if let Some(nodes) = self.node_map.get(&instrument.id) {
-                let mute = instrument.mute || session.master_mute || (any_solo && !instrument.solo);
-                client.set_param(nodes.output, "level", instrument.level * session.master_level)
+                let mute = instrument.mute || session.mixer.master_mute || (any_solo && !instrument.solo);
+                client.set_param(nodes.output, "level", instrument.level * session.mixer.master_level)
                     .map_err(|e| e.to_string())?;
                 client.set_param(nodes.output, "mute", if mute { 1.0 } else { 0.0 })
                     .map_err(|e| e.to_string())?;

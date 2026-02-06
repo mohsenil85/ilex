@@ -63,7 +63,7 @@ pub fn dispatch_action(
         let s = state.session.clone();
         let i = state.instruments.clone();
         state.undo_history.push_from(s, i);
-        state.dirty = true;
+        state.project.dirty = true;
     }
 
     let result = match action {
@@ -91,7 +91,7 @@ pub fn dispatch_action(
             if let Some(snapshot) = state.undo_history.undo(&state.session, &state.instruments) {
                 state.session = snapshot.session;
                 state.instruments = snapshot.instruments;
-                state.dirty = true;
+                state.project.dirty = true;
                 let mut r = DispatchResult::none();
                 r.audio_dirty = AudioDirty::all();
                 r
@@ -103,7 +103,7 @@ pub fn dispatch_action(
             if let Some(snapshot) = state.undo_history.redo(&state.session, &state.instruments) {
                 state.session = snapshot.session;
                 state.instruments = snapshot.instruments;
-                state.dirty = true;
+                state.project.dirty = true;
                 let mut r = DispatchResult::none();
                 r.audio_dirty = AudioDirty::all();
                 r

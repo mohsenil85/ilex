@@ -14,7 +14,7 @@ impl AudioEngine {
         match target {
             AutomationTarget::InstrumentLevel(instrument_id) => {
                 if let Some(nodes) = self.node_map.get(instrument_id) {
-                    let effective_level = value * session.master_level;
+                    let effective_level = value * session.mixer.master_level;
                     backend.set_param(nodes.output, "level", effective_level)
                         .map_err(|e| e.to_string())?;
                 }
@@ -196,7 +196,7 @@ impl AudioEngine {
         match target {
             AutomationTarget::InstrumentLevel(instrument_id) => {
                 if let Some(nodes) = self.node_map.get(instrument_id) {
-                    let effective_level = value * session.master_level;
+                    let effective_level = value * session.mixer.master_level;
                     msgs.push(build_n_set_message(nodes.output, "level", effective_level));
                 }
             }

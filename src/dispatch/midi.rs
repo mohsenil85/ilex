@@ -10,7 +10,7 @@ pub(super) fn dispatch_midi(action: &MidiAction, state: &mut AppState) -> Dispat
         }
         MidiAction::DisconnectPort => {
             // Port disconnection is intercepted in main.rs (needs MidiInputManager)
-            state.midi_connected_port = None;
+            state.midi.connected_port = None;
             DispatchResult::none()
         }
         MidiAction::AddCcMapping { cc, channel, target } => {

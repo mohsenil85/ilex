@@ -260,7 +260,7 @@ mod tests {
         assert_eq!(loaded_session.arrangement.play_mode, PlayMode::Song);
 
         // Skipped fields should be default
-        assert_eq!(loaded_session.mixer_selection, crate::state::session::MixerSelection::Instrument(0));
+        assert_eq!(loaded_session.mixer.selection, crate::state::session::MixerSelection::Instrument(0));
 
         // --- Assert instruments ---
         assert_eq!(loaded_instruments.instruments.len(), 4);

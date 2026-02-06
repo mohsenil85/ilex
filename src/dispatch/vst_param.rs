@@ -108,7 +108,7 @@ pub(super) fn dispatch_vst_param(
                 }
             }
             // Record automation when recording + playing
-            if state.automation_recording && state.session.piano_roll.playing {
+            if state.recording.automation_recording && state.session.piano_roll.playing {
                 record_automation_point(
                     state,
                     AutomationTarget::VstParam(*instrument_id, *param_index),
@@ -259,9 +259,9 @@ mod tests {
     fn set_param_records_when_recording() {
         let (mut state, mut audio) = setup();
         let id = state.instruments.add_instrument(SourceType::Saw);
-        state.automation_recording = true;
+        state.recording.automation_recording = true;
         state.session.piano_roll.playing = true;
-        state.audio_playhead = 100;
+        state.audio.playhead = 100;
 
         dispatch_vst_param(
             &VstParamAction::SetParam(id, VstTarget::Source, 0, 0.7),
@@ -279,7 +279,7 @@ mod tests {
     fn set_param_no_record_when_not_recording() {
         let (mut state, mut audio) = setup();
         let id = state.instruments.add_instrument(SourceType::Saw);
-        state.automation_recording = false;
+        state.recording.automation_recording = false;
         state.session.piano_roll.playing = true;
 
         dispatch_vst_param(
@@ -296,7 +296,7 @@ mod tests {
     fn set_param_updates_state_regardless() {
         let (mut state, mut audio) = setup();
         let id = state.instruments.add_instrument(SourceType::Saw);
-        state.automation_recording = false;
+        state.recording.automation_recording = false;
 
         dispatch_vst_param(
             &VstParamAction::SetParam(id, VstTarget::Source, 0, 0.7),

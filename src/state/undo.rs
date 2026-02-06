@@ -217,20 +217,20 @@ mod tests {
         let instruments = InstrumentState::new();
 
         // Initial state
-        session.master_level = 1.0;
+        session.mixer.master_level = 1.0;
         history.push(&session, &instruments);
 
         // Modified state
         let mut session2 = session.clone();
-        session2.master_level = 0.5;
+        session2.mixer.master_level = 0.5;
         
         // Undo to initial
         let snapshot = history.undo(&session2, &instruments).unwrap();
-        assert_eq!(snapshot.session.master_level, 1.0);
+        assert_eq!(snapshot.session.mixer.master_level, 1.0);
         
         // Redo to modified
         let snapshot_redo = history.redo(&snapshot.session, &snapshot.instruments).unwrap();
-        assert_eq!(snapshot_redo.session.master_level, 0.5);
+        assert_eq!(snapshot_redo.session.mixer.master_level, 0.5);
     }
     
     #[test]

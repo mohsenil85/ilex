@@ -71,7 +71,7 @@ pub(super) fn handle_update(
     update: &crate::action::InstrumentUpdate,
 ) -> DispatchResult {
     // Capture old values for automation recording before applying
-    let old_values = if state.automation_recording && state.session.piano_roll.playing {
+    let old_values = if state.recording.automation_recording && state.session.piano_roll.playing {
         state.instruments.instrument(update.id).map(|inst| {
             (inst.lfo.rate, inst.lfo.depth,
              inst.amp_envelope.attack, inst.amp_envelope.decay,
@@ -173,9 +173,9 @@ mod tests {
     #[test]
     fn handle_update_records_lfo_rate_when_recording() {
         let (mut state, id) = setup_with_instrument();
-        state.automation_recording = true;
+        state.recording.automation_recording = true;
         state.session.piano_roll.playing = true;
-        state.audio_playhead = 100;
+        state.audio.playhead = 100;
 
         let mut update = default_update(&state, id);
         update.lfo.rate = 10.0; // changed from default 2.0
@@ -190,9 +190,9 @@ mod tests {
     #[test]
     fn handle_update_records_envelope_changes_when_recording() {
         let (mut state, id) = setup_with_instrument();
-        state.automation_recording = true;
+        state.recording.automation_recording = true;
         state.session.piano_roll.playing = true;
-        state.audio_playhead = 200;
+        state.audio.playhead = 200;
 
         let mut update = default_update(&state, id);
         update.amp_envelope.attack = 0.5;  // changed from default
@@ -211,7 +211,7 @@ mod tests {
     #[test]
     fn handle_update_no_automation_when_not_recording() {
         let (mut state, id) = setup_with_instrument();
-        state.automation_recording = false;
+        state.recording.automation_recording = false;
         state.session.piano_roll.playing = true;
 
         let mut update = default_update(&state, id);
@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn handle_update_no_automation_for_unchanged_params() {
         let (mut state, id) = setup_with_instrument();
-        state.automation_recording = true;
+        state.recording.automation_recording = true;
         state.session.piano_roll.playing = true;
 
         // Send update with same values — no automation should be recorded

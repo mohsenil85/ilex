@@ -15,13 +15,11 @@ fn dispatch_save(
     io_tx: &Sender<IoFeedback>,
     result: &mut DispatchResult,
 ) {
-    // Sync piano roll time_signature from session before cloning
-    state.session.piano_roll.time_signature = state.session.time_signature;
-
+    // piano_roll.time_signature/bpm are now kept in sync by SessionState setters
     let session = state.session.clone();
     let instruments = state.instruments.clone();
     let tx = io_tx.clone();
-    let save_id = state.io_generation.next_save();
+    let save_id = state.io.generation.next_save();
 
     std::thread::spawn(move || {
         if let Some(parent) = path.parent() {
@@ -51,7 +49,7 @@ fn dispatch_load(
     result: &mut DispatchResult,
 ) {
     let tx = io_tx.clone();
-    let load_id = state.io_generation.next_load();
+    let load_id = state.io.generation.next_load();
 
     std::thread::spawn(move || {
         let res = if path.exists() {
@@ -84,7 +82,7 @@ pub(super) fn dispatch_session(
 
     match action {
         SessionAction::Save => {
-            let path = state.project_path.clone().unwrap_or_else(default_rack_path);
+            let path = state.project.path.clone().unwrap_or_else(default_rack_path);
             dispatch_save(path, state, audio, io_tx, &mut result);
         }
         SessionAction::SaveAs(ref path) => {
@@ -93,7 +91,7 @@ pub(super) fn dispatch_session(
             result.push_nav(NavIntent::ConditionalPop("save_as"));
         }
         SessionAction::Load => {
-            let path = state.project_path.clone().unwrap_or_else(default_rack_path);
+            let path = state.project.path.clone().unwrap_or_else(default_rack_path);
             dispatch_load(path, state, audio, io_tx, &mut result);
             result.push_nav(NavIntent::ConditionalPop("confirm"));
             result.push_nav(NavIntent::ConditionalPop("project_browser"));
@@ -105,11 +103,11 @@ pub(super) fn dispatch_session(
             result.push_nav(NavIntent::ConditionalPop("project_browser"));
         }
         SessionAction::NewProject => {
-            let defaults = state.default_settings.clone();
+            let defaults = state.project.default_settings.clone();
             state.session = crate::state::SessionState::new_with_defaults(defaults, crate::state::session::DEFAULT_BUS_COUNT);
             state.instruments = crate::state::InstrumentState::new();
-            state.project_path = None;
-            state.dirty = false;
+            state.project.path = None;
+            state.project.dirty = false;
             state.undo_history.clear();
             result.audio_dirty = crate::action::AudioDirty::all();
             result.project_name = Some("untitled".to_string());
@@ -119,16 +117,12 @@ pub(super) fn dispatch_session(
         }
         SessionAction::UpdateSession(ref settings) => {
             state.session.apply_musical_settings(settings);
-            state.session.piano_roll.time_signature = state.session.time_signature;
-            state.session.piano_roll.bpm = state.session.bpm as f32;
             result.push_nav(NavIntent::PopOrSwitchTo("instrument"));
             result.audio_dirty.session = true;
             result.audio_dirty.piano_roll = true;
         }
         SessionAction::UpdateSessionLive(ref settings) => {
             state.session.apply_musical_settings(settings);
-            state.session.piano_roll.time_signature = state.session.time_signature;
-            state.session.piano_roll.bpm = state.session.bpm as f32;
             result.audio_dirty.session = true;
             result.audio_dirty.piano_roll = true;
         }
@@ -138,7 +132,7 @@ pub(super) fn dispatch_session(
         SessionAction::ImportCustomSynthDef(ref path) => {
             let path = path.clone();
             let tx = io_tx.clone();
-            let import_id = state.io_generation.next_import_synthdef();
+            let import_id = state.io.generation.next_import_synthdef();
             
             std::thread::spawn(move || {
                 // Read and parse the .scd file
@@ -201,11 +195,11 @@ pub(super) fn dispatch_session(
             result.push_nav(NavIntent::Pop);
         }
         SessionAction::AdjustHumanizeVelocity(delta) => {
-            state.session.humanize_velocity = (state.session.humanize_velocity + delta).clamp(0.0, 1.0);
+            state.session.humanize.velocity = (state.session.humanize.velocity + delta).clamp(0.0, 1.0);
             result.audio_dirty.session = true;
         }
         SessionAction::AdjustHumanizeTiming(delta) => {
-            state.session.humanize_timing = (state.session.humanize_timing + delta).clamp(0.0, 1.0);
+            state.session.humanize.timing = (state.session.humanize.timing + delta).clamp(0.0, 1.0);
             result.audio_dirty.session = true;
         }
         SessionAction::ImportVstPlugin(ref path, kind) => {
@@ -255,7 +249,7 @@ pub(super) fn dispatch_session(
             result.audio_dirty.session = true;
         }
         SessionAction::ToggleMasterMute => {
-            state.session.master_mute = !state.session.master_mute;
+            state.session.mixer.master_mute = !state.session.mixer.master_mute;
             result.audio_dirty.session = true;
             result.audio_dirty.mixer_params = true;
         }
